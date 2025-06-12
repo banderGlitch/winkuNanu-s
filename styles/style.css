@@ -623,9 +623,9 @@ header.sticky {
     width: 100%;
 }
 
-.log-reg-area.reg {
+/* .log-reg-area.reg {
     display: none;
-}
+} */
 
 .login-reg-bg.show .log-reg-area.reg {
     display: block;
