@@ -475,11 +475,12 @@ iframe {
 
 /*--- sticky header ---*/
 
-header.stick {
-    z-index: 99;
-    position: absolute;
-    top: 0;
-    left: 0;
+.topbar.stick {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
 }
 
 header.sticky {
@@ -1496,7 +1497,7 @@ form button {
 }
 
 .we-video-info > ul li span.like:hover .we-video-info > ul li span.dislike:hover {
-    trnsform: scale(1.1);
+    transform: scale(1.1);
 }
 
 
@@ -2060,13 +2061,20 @@ span.status.f-off {
 
 /*--- footer ---*/
 
-footer {
+footer .container {
+    padding: 40px 0;
+  }
+
+footer .bottombar {
+    padding: 20px 0;
+}
+
+  footer {
     background: #fff;
     float: left;
-    padding: 75px 0;
     width: 100%;
     position: relative;
-}
+  }
 
 footer::before {
     background: rgba(0, 0, 0, 0) linear-gradient(to right, #ffffff 0%, #2fa7cd 50%, #ffffff 100%) repeat scroll 0 0;

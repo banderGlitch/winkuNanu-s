@@ -33,5 +33,31 @@ a {
 /* Theme layout */
 .theme-layout {
   background: var(--background-color);
-  min-height: 100vh;
+  /* min-height: 100vh; */
+}
+
+.feed-desktop-center {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  background: #f5f6fa;
+}
+
+@media screen and (max-width: 640px) {
+  .feed-desktop-center {
+    display: block !important;
+    width: 100% !important;
+    justify-content: unset !important;
+    align-items: unset !important;
+  }
+}
+
+@media screen and (min-width: 641px) {
+  .theme-layout {
+    padding-top: 90px !important;
+  }
+  .feed-desktop-center {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
 } 

@@ -1049,6 +1049,10 @@
         font-size: 15px;
     }
     .job-detail > ul li span{width: 94%;}
+    footer .container {
+        padding-left: 16px;
+        padding-right: 16px;
+    }
 }
 
 @media screen and (max-width: 480px) {
@@ -1404,7 +1408,10 @@
     .job-detail > h3 {
         font-size: 22px;
     }
-
+    footer .container {
+        padding-left: 8px;
+        padding-right: 8px;
+    }
 }
 
 @media screen and (max-width: 420px) and (min-width: 361px) {
@@ -1796,5 +1803,4 @@
         width: 100%;
     }
     .apply-bttons > a{font-size: 13px; padding: 8px 14px;}
-
 }
