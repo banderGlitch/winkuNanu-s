@@ -78,7 +78,7 @@ const Header = () => (
               <li><a href="#" title="">404 error page</a></li>
               <li><a href="#" title="">about</a></li>
               <li><a href="#" title="">contact</a></li>
-              <li><a href="#" title="">faq's page</a></li>
+              <li><a href="#" title="">faq&apos page</a></li>
               <li><a href="#" title="">insights</a></li>
               <li><a href="#" title="">knowledge base</a></li>
               <li><a href="#" title="">Widgts</a></li>

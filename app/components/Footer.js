@@ -13,7 +13,7 @@ const Footer = () => (
                   <Link href="/" title=""><img src="/images/logo.png" alt="logo" /></Link>
                 </div>
                 <p>
-                  The trio took this simple idea and built it into the world's leading carpooling platform.
+                  The trio took this simple idea and built it into the world&apos leading carpooling platform.
                 </p>
               </div>
               <ul className="location">
