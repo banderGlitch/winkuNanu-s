@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true);
@@ -16,7 +17,7 @@ export default function Home() {
                 Winku is free to use for as long as you want with two active projects.
               </p>
               <div className="friend-logo">
-                <span><img src="/images/wink.png" alt="" /></span>
+                <span><Image src="/images/wink.png" width={100} height={100} alt="" /></span>
               </div>
               <a href="#" title="" className="folow-me">Follow Us on</a>
             </div>
