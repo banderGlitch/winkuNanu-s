@@ -29,7 +29,7 @@ export default function Home() {
               <div className="log-reg-area sign">
                 <h2 className="log-title">Login</h2>
                 <p>
-                  Don't use Winku Yet? <a href="#" title="">Take the tour</a> or <a href="#" title="">Join now</a>
+                  Don&apos;t use Winku Yet? <a href="#" title="">Take the tour</a> or <a href="#" title="">Join now</a>
                 </p>
                 <form method="post">
                   <div className="form-group">
@@ -61,7 +61,7 @@ export default function Home() {
               <div className="log-reg-area reg">
                 <h2 className="log-title">Register</h2>
                 <p>
-                  Don't use Winku Yet? <a href="#" title="">Take the tour</a> or <a href="#" title="">Join now</a>
+                Don&apos;t use Winku Yet? <a href="#" title="">Take the tour</a> or <a href="#" title="">Join now</a>
                 </p>
                 <form method="post">
                   <div className="form-group">
