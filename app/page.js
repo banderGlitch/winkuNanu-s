@@ -5,7 +5,7 @@ import Image from 'next/image';
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true);
-  // cons
+  
   return (
     <div className="container-fluid pdng0">
       <div className="row merged">
