@@ -14,7 +14,7 @@ export default function RootLayout({ children }) {
       </head>
       <body>
         <NProgressLoader />
-          <div className="theme-layout login-page">
+          <div >
             {children}
           </div>
       </body>

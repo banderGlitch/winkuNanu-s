@@ -5,6 +5,7 @@ export default function Feeds() {
   return (
     <>
     <Header />
+    <div className="theme-layout">
     <div className="feed-desktop-center feed-mobile-center">
       <div className="col-lg-6">
         <div className="central-meta">
@@ -224,8 +225,9 @@ export default function Feeds() {
           {/* Repeat the above .central-meta.item for each post */}
         </div>
       </div>
+      </div>
+      <Footer />
     </div>
-    <Footer />
     </>
   );
 } 

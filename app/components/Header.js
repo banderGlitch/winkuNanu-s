@@ -87,7 +87,7 @@ const Header = () => (
         </ul>
         <ul className="setting-area">
           <li>
-            <a href="#" title="Home" data-ripple=""><i className="ti-search"></i></a>
+            <a href="#" title="Search" data-ripple=""><i className="ti-search"></i></a>
             <div className="searched">
               <form method="post" className="form-search">
                 <input type="text" placeholder="Search Friend" />
@@ -95,7 +95,9 @@ const Header = () => (
               </form>
             </div>
           </li>
-          <li><Link href="/newsfeed" title="Home" data-ripple=""><i className="ti-home"></i></Link></li>
+          <li>
+            <Link href="/newsfeed" title="Home" data-ripple=""><i className="ti-home"></i></Link>
+          </li>
           <li>
             <a href="#" title="Notification" data-ripple="">
               <i className="ti-bell"></i><span>20</span>
@@ -104,7 +106,9 @@ const Header = () => (
           <li>
             <a href="#" title="Messages" data-ripple=""><i className="ti-comment"></i><span>12</span></a>
           </li>
-          <li><a href="#" title="Languages" data-ripple=""><i className="fa fa-globe"></i></a></li>
+          <li>
+            <a href="#" title="Languages" data-ripple=""><i className="fa fa-globe"></i></a>
+          </li>
         </ul>
         <div className="user-img">
           <img src="/images/resources/admin.jpg" alt="admin" />
