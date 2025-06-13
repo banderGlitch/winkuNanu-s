@@ -56,7 +56,7 @@ a {
   .theme-layout {
     padding-top: 90px !important;
   }
-  .login-page .theme-layout {
+  .login-page {
     padding-top: 0 !important;
   }
   .feed-desktop-center {

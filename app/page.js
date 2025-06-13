@@ -7,7 +7,7 @@ export default function Home() {
   const [isLogin, setIsLogin] = useState(true);
   
   return (
-    <div className="container-fluid pdng0 login-page">
+    <div className="container-fluid pdng0">
       <div className="row merged">
         <div className="col-lg-6 col-md-6 col-sm-6 col-xs-12">
           <div className="land-featurearea">
