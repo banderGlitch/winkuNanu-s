@@ -4,6 +4,10 @@ import '../styles/style.css'
 import '../styles/color.css'
 import '../styles/responsive.css'
 import NProgressLoader from './components/NProgressLoader'
+import { Inter } from 'next/font/google'
+import { ToastProvider } from './components/Toast'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
   title: 'Winku Social Network',
@@ -18,11 +22,13 @@ export default function RootLayout({ children }) {
         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" />
         <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/themify-icons@0.1.2/css/themify-icons.css" />
       </head>
-      <body>
+      <body className={inter.className}>
         <NProgressLoader />
-        <div>
-          {children}
-        </div>
+        <ToastProvider>
+          <div>
+            {children}
+          </div>
+        </ToastProvider>
       </body>
     </html>
   )

@@ -1,9 +1,11 @@
 import Header from '../components/Header';
 import Footer from '../components/Footer';
+import ProtectedRoutes from '../components/ProtectedRoutes';
 
 export default function Feeds() {
   return (
     <>
+    <ProtectedRoutes>
     <Header />
     <div className="theme-layout">
     <div className="feed-desktop-center feed-mobile-center">
@@ -228,6 +230,7 @@ export default function Feeds() {
       </div>
       <Footer />
     </div>
+    </ProtectedRoutes>
     </>
   );
 } 
