@@ -2,12 +2,14 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 import { showToast, useFormErrors } from './components/Toast';
 import styles from './components/Styles/Spinner.module.css';
 import { saveTokens, clearTokens } from './utils/tokenUtils';
 
 
 export default function Home() {
+  const router = useRouter();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoginLoading, setIsLoginLoading] = useState(false);
   const [isRegisterLoading, setIsRegisterLoading] = useState(false);
@@ -34,7 +36,7 @@ export default function Home() {
     password: "",
     firstName: "",
     lastName: "",
-    gender: "male",
+    gender: "",
     email: "",
     dob: "",
     ipAddress: "",
@@ -57,6 +59,11 @@ export default function Home() {
       ipAddress: "",
       userAgent: ""
     };
+    
+    // Don't show errors on initial render
+    if (!Object.values(registerData).some(Boolean)) {
+      return true;
+    }
 
     // Validate Username
     if (!registerData.username.trim()) {
@@ -205,8 +212,8 @@ export default function Home() {
           password: ''
         });
 
-        // TODO: Handle redirection here
-        // For example: router.push('/dashboard');
+        // Redirect to feeds page
+        router.push('/feeds');
       } else {
         const errorData = await response.json();
         showToast(errorData.message || 'Login failed', 'error');

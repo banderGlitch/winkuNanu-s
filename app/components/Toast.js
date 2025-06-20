@@ -43,8 +43,11 @@ export const ToastProvider = ({ children }) => {
 // Hook for handling form errors
 export const useFormErrors = (errors) => {
   useEffect(() => {
-    // Show first error message as toast if any exists
-    const errorMessages = Object.values(errors).filter(Boolean);
+    // Only show error messages that are actual validation errors (not initial/default values)
+    const errorMessages = Object.entries(errors)
+      .filter(([key, value]) => Boolean(value) && value !== key) // Exclude cases where value equals key name
+      .map(([_, value]) => value);
+    
     if (errorMessages.length > 0) {
       showToast(errorMessages[0], 'error');
     }

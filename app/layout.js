@@ -1,17 +1,17 @@
 import '../styles/globals.css'
 import '../styles/main.min.css'
+import { Inter } from 'next/font/google'
 import '../styles/style.css'
 import '../styles/color.css'
 import '../styles/responsive.css'
 import NProgressLoader from './components/NProgressLoader'
-import { Inter } from 'next/font/google'
 import { ToastProvider } from './components/Toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'Winku Social Network',
-  description: 'A modern social network platform',
+  title: 'Winku',
+  description: 'Winku Social Network',
 }
 
 export default function RootLayout({ children }) {

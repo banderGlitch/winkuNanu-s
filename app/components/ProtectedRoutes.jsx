@@ -6,11 +6,11 @@ import { useEffect } from 'react';
 
 export default function ProtectedRoutes({ children }) {
     const router = useRouter();
-    const isAuthenticated = typeof window !== "undefined" && !!localStorage.getItem('token');
+    const isAuthenticated = typeof window !== "undefined" && !!localStorage.getItem('accessToken');
 
     useEffect(() => {
         if (!isAuthenticated) {
-            router.push('/feed');
+            router.push('/');
         }
     }, [isAuthenticated, router]);
 
