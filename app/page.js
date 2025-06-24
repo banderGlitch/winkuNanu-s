@@ -185,7 +185,7 @@ export default function Home() {
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoginLoading(true);
-
+  
     try {
       const response = await fetch('/api/v1/auth/login', {
         method: 'POST',
@@ -194,29 +194,28 @@ export default function Home() {
         },
         body: JSON.stringify(loginData),
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        
+  
+      const data = await response.json();
+  
+      if (response.ok && data.success) {
         // Save tokens using the utility function
         saveTokens({
           token: data.token,
           refreshToken: data.refreshToken
         });
-
+  
         showToast('Login successful!', 'success');
-        
+  
         // Clear login form
         setLoginData({
           username: '',
           password: ''
         });
-
+  
         // Redirect to feeds page
         router.push('/feeds');
       } else {
-        const errorData = await response.json();
-        showToast(errorData.message || 'Login failed', 'error');
+        showToast(data.message || 'Login failed', 'error');
         clearTokens();
       }
     } catch (error) {
@@ -227,6 +226,52 @@ export default function Home() {
       setIsLoginLoading(false);
     }
   };
+
+  // const handleLogin = async (e) => {
+  //   e.preventDefault();
+  //   setIsLoginLoading(true);
+
+  //   try {
+  //     const response = await fetch('/api/v1/auth/login', {
+  //       method: 'POST',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       body: JSON.stringify(loginData),
+  //     });
+
+  //     if (response.ok) {
+  //       const data = await response.json();
+        
+  //       // Save tokens using the utility function
+  //       saveTokens({
+  //         token: data.token,
+  //         refreshToken: data.refreshToken
+  //       });
+
+  //       showToast('Login successful!', 'success');
+        
+  //       // Clear login form
+  //       setLoginData({
+  //         username: '',
+  //         password: ''
+  //       });
+
+  //       // Redirect to feeds page
+  //       router.push('/feeds');
+  //     } else {
+  //       const errorData = await response.json();
+  //       showToast(errorData.message || 'Login failed', 'error');
+  //       clearTokens();
+  //     }
+  //   } catch (error) {
+  //     showToast('Network error. Please try again.', 'error');
+  //     console.error('Login error:', error);
+  //     clearTokens();
+  //   } finally {
+  //     setIsLoginLoading(false);
+  //   }
+  // };
   
   return (
     <main>
