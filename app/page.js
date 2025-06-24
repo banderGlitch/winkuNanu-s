@@ -120,20 +120,20 @@ export default function Home() {
 
   const handleRegister = async (e) => {
     e.preventDefault();
-    
+  
     if (!validateForm()) {
       return;
     }
-
+  
     setIsRegisterLoading(true);
-
+  
     // Add IP address and user agent before submitting
     const updatedRegisterData = {
       ...registerData,
       ipAddress: "127.0.0.1",
       userAgent: navigator.userAgent
     };
-
+  
     try {
       const response = await fetch('/api/v1/auth/register', {
         method: 'POST',
@@ -142,10 +142,10 @@ export default function Home() {
         },
         body: JSON.stringify(updatedRegisterData),
       });
-
+  
       const data = await response.json();
-
-      if (response.ok) {
+  
+      if (response.ok && data.success) {
         showToast('Registration successful!', 'success');
         // Clear form
         setRegisterData({
