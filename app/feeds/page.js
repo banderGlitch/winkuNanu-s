@@ -1,9 +1,19 @@
 'use client';
+import { useState, useEffect } from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProtectedRoutes from '../components/ProtectedRoutes';
+import { getFeeds } from '../utils/apiService';
 
 export default function Feeds() {
+
+  useEffect(() => {
+    const fetchFeeds = async () => {
+      const response = await getFeeds();
+      console.log(response);
+    };
+    fetchFeeds();
+  }, []);
   return (
     <>
     <ProtectedRoutes>
