@@ -1,3 +1,4 @@
+// import 'font-awesome/css/font-awesome.min.css';
 import '../styles/globals.css'
 import '../styles/main.min.css'
 import { Inter } from 'next/font/google'
