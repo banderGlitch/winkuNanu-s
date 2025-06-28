@@ -1,7 +1,12 @@
 import api from './axiosInstance';
 
-// Feeds API
-export const getFeeds = () => api.get('/api/v1/post/feed');
+
+// Feeds API for infinite scroll
+export const fetchFeeds = async () => {
+  // Adjust the endpoint and params as per your backend
+  const res = await api.get(`/api/v1/post/feed`);
+  return res.data;
+};
 
 
 // Create Post API

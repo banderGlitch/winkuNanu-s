@@ -7,6 +7,7 @@ import '../styles/color.css'
 import '../styles/responsive.css'
 import NProgressLoader from './components/NProgressLoader'
 import { ToastProvider } from './components/Toast'
+import QueryProvider from './QueryProvider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -14,6 +15,7 @@ export const metadata = {
   title: 'Winku',
   description: 'Winku Social Network',
 }
+
 
 export default function RootLayout({ children }) {
   return (
@@ -26,9 +28,11 @@ export default function RootLayout({ children }) {
       <body className={inter.className}>
         <NProgressLoader />
         <ToastProvider>
-          <div>
-            {children}
-          </div>
+          <QueryProvider>
+            <div>
+              {children}
+            </div>
+          </QueryProvider>
         </ToastProvider>
       </body>
     </html>
