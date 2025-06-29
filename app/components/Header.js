@@ -1,12 +1,28 @@
 'use client';
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from 'next/navigation';
 import { clearTokens } from '../utils/tokenUtils';
 
 const Header = () => {
   const router = useRouter();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
 
   const handleLogout = async () => {
     try {
@@ -132,10 +148,13 @@ const Header = () => {
               <a href="#" title="Languages" data-ripple=""><i className="fa fa-globe"></i></a>
             </li>
           </ul>
-          <div className="user-img">
-            <img  onClick={handleLogout} src="/images/resources/admin.jpg" alt="admin" />
+          <div className="user-img" ref={dropdownRef}>
+            <img src="/images/resources/admin.jpg" alt="admin" onClick={() => setDropdownOpen((open) => !open)}
+              style={{ cursor: "pointer" }} />
             <span className="status f-online"></span>
-            {/* <button onClick={handleLogout} style={{ marginLeft: 10, padding: '2px 8px', fontSize: '12px' }}>Logout</button> */}
+            <div className={`user-setting ${dropdownOpen ? 'active' : ''}`}>
+              <a title="" onClick={handleLogout}><i className="ti-power-off"></i>Log Out</a>
+            </div>
           </div>
           <span className="ti-menu main-menu" data-ripple=""></span>
         </div>
