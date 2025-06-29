@@ -8,6 +8,12 @@ export const fetchFeeds = async () => {
   return res.data;
 };
 
+// Fetch Picture for Profile   
+export const fetchPicture = async (id) => {
+  const res = await api.get(`/api/v1/images/view/${id}`, { responseType: 'blob' });
+  return res.data; // This is a Blob
+};
+
 
 // Create Post API
 export const createPost = async ({ content, visibility, image }) => {
