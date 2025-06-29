@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState  , useRef} from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProtectedRoutes from '../components/ProtectedRoutes';
@@ -14,7 +14,7 @@ export default function Feeds() {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   
-
+  const feedsRef = useRef();
 
 
   const handleContentChange = (e) => setContent(e.target.value);
@@ -30,6 +30,9 @@ export default function Feeds() {
       setContent('');
       setVisibility('PUBLIC');
       setImage(null);
+      if (feedsRef.current) {
+        feedsRef.current.refetchFeeds();
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -48,6 +51,9 @@ export default function Feeds() {
       setVisibility('PUBLIC');
       setImage(null);
       setShowModal(false);
+      if (feedsRef.current) {
+        feedsRef.current.refetchFeeds();
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -107,7 +113,7 @@ export default function Feeds() {
                   </div>
                 </div>
               </div>
-              <InfiniteFeeds />
+              <InfiniteFeeds ref={feedsRef} />
             </div>
           </div>
           <Footer />
