@@ -94,7 +94,7 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
           likeCounter: (prev[postId]?.likeCounter ?? feeds.find(f => f.id === postId)?.likeCounter ?? 0) + 1
         }
       }));
-      queryClient.invalidateQueries(['all-feeds']);
+    //   queryClient.invalidateQueries(['all-feeds']);
     }
   });
   // Fetch all feeds at once
