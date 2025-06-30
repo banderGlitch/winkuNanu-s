@@ -202,14 +202,27 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
       {feeds.map(feed => {
         const postState = likeStates[feed.id] || { liked: false, likeCount: feed.likeCounter ?? 0 };
         const handleLike = () => {
-          setLikeStates(prev => ({
-            ...prev,
-            [feed.id]: {
-              liked: !postState.liked,
-              likeCount: postState.liked ? postState.likeCount - 1 : postState.likeCount + 1
+          likeMutation.mutate(feed.id, {
+            onSuccess: (data) => {
+              if (data && data.message === 'Post liked') {
+                setLikeStates(prev => ({
+                  ...prev,
+                  [feed.id]: {
+                    liked: true,
+                    likeCount: postState.likeCount + 1
+                  }
+                }));
+              } else if (data && data.message === 'Post unliked') {
+                setLikeStates(prev => ({
+                  ...prev,
+                  [feed.id]: {
+                    liked: false,
+                    likeCount: postState.likeCount - 1
+                  }
+                }));
+              }
             }
-          }));
-          likeMutation.mutate(feed.id);
+          });
         };
         return (
           <div className="central-meta item" key={feed.id}>
@@ -248,7 +261,7 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
                       <li>
                         <span className={`like${postState.liked ? ' active' : ''}`} title="like" style={{ cursor: 'pointer' }} onClick={handleLike}>
                           <i className="ti-heart"></i>
-                          <ins>{postState.likeCount}</ins>
+                          <ins style={{ color: postState.liked ? 'green' : '#222' }}>{postState.likeCount}</ins>
                         </span>
                       </li>
                       <li className="social-media">
