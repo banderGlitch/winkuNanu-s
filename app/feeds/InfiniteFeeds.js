@@ -77,6 +77,41 @@ function FeedImage({ imageId }) {
   );
 }
 
+// Avatar for comments/replies
+function CommentAvatar({ imageId }) {
+  const [imgUrl, setImgUrl] = useState(null);
+  const [loading, setLoading] = useState(!!imageId);
+  const [error, setError] = useState(false);
+  useEffect(() => {
+    if (!imageId) return;
+    let isMounted = true;
+    setLoading(true);
+    setError(false);
+    setImgUrl(null);
+    fetchPicture(imageId)
+      .then(blob => {
+        if (isMounted) {
+          setImgUrl(URL.createObjectURL(blob));
+          setLoading(false);
+        }
+      })
+      .catch(() => {
+        if (isMounted) {
+          setError(true);
+          setLoading(false);
+        }
+      });
+    return () => { isMounted = false; };
+  }, [imageId]);
+  if (!imageId || error) {
+    return <img src="/images/resources/comet-2.jpg" alt="" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />;
+  }
+  if (loading) {
+    return <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#eee' }} />;
+  }
+  return <img src={imgUrl} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />;
+}
+
 function CommentsSection({ postId }) {
   const [commentText, setCommentText] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -118,7 +153,7 @@ function CommentsSection({ postId }) {
             (showAll ? data.data : data.data.slice(0, 3)).map((comment) => (
               <li key={comment.id}>
                 <div className="comet-avatar">
-                  <img src="/images/resources/comet-1.jpg" alt="" />
+                  <CommentAvatar imageId={comment.imageId} />
                 </div>
                 <div className="we-comment">
                   <div className="coment-head">
@@ -173,7 +208,7 @@ function CommentsSection({ postId }) {
                       {comment.replies.map(reply => (
                         <li key={reply.id}>
                           <div className="comet-avatar">
-                            <img src="/images/resources/comet-1.jpg" alt="" />
+                            <CommentAvatar imageId={reply.imageId} />
                           </div>
                           <div className="we-comment">
                             <div className="coment-head">
