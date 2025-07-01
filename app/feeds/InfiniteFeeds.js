@@ -2,7 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import styles from '../components/Styles/Spinner.module.css';
-import { fetchFeeds, fetchPicture, toggleLike, toggleDislike } from '../utils/apiService';
+import { fetchFeeds, fetchPicture, toggleLike, fetchComments, postComment } from '../utils/apiService';
 
 function FeedSkeleton() {
   // Render 5 skeleton cards, full viewport height
@@ -77,16 +77,98 @@ function FeedImage({ imageId }) {
   );
 }
 
+function CommentsSection({ postId }) {
+  const [commentText, setCommentText] = useState('');
+  const queryClient = useQueryClient();
+
+  // Fetch comments
+  const { data, isLoading, isError } = useQuery({
+    queryKey: ['comments', postId],
+    queryFn: () => fetchComments({ postId, page: 0, size: 10 }),
+  });
+
+  // Post comment
+  const mutation = useMutation({
+    mutationFn: ({ postId, commentText }) => postComment({ postId, commentText }),
+    onSuccess: () => {
+      setCommentText('');
+      queryClient.invalidateQueries(['comments', postId]);
+    },
+  });
+
+  return (
+    <div className="coment-area">
+      {isLoading ? (
+        <div style={{ textAlign: 'center', padding: 8 }}>Loading comments...</div>
+      ) : isError ? (
+        <div style={{ color: 'red', textAlign: 'center', padding: 8 }}>Failed to load comments</div>
+      ) : (
+        <ul className="we-comet">
+          {data?.data && data.data.length > 0 ? (
+            data.data.map((comment) => (
+              <li key={comment.id}>
+                <div className="comet-avatar">
+                  <img src="/images/resources/comet-1.jpg" alt="" />
+                </div>
+                <div className="we-comment">
+                  <div className="coment-head">
+                    <h5><a href="#" title="">{comment.username || 'User'}</a></h5>
+                    <span>{comment.commentedAt ? new Date(comment.commentedAt).toLocaleString() : ''}</span>
+                  </div>
+                  <p>{comment.comment}</p>
+                </div>
+              </li>
+            ))
+          ) : (
+            <li><div style={{ textAlign: 'center', color: '#888' }}>No comments yet.</div></li>
+          )}
+        </ul>
+      )}
+      {/* Post comment form */}
+      <div className="post-comment" style={{ marginTop: 12 }}>
+        <div className="comet-avatar">
+          <img src="/images/resources/comet-1.jpg" alt="" />
+        </div>
+        <div className="post-comt-box">
+          <form
+            onSubmit={e => {
+              e.preventDefault();
+              if (!commentText.trim()) return;
+              mutation.mutate({ postId, commentText });
+            }}
+          >
+            <input
+              type="text"
+              placeholder="Post your comment"
+              value={commentText}
+              onChange={e => setCommentText(e.target.value)}
+              style={{ width: '80%', padding: 6, borderRadius: 4, border: '1px solid #eee' }}
+              disabled={mutation.isLoading}
+            />
+            <button
+              type="submit"
+              style={{ marginLeft: 8, padding: '6px 16px', borderRadius: 4, background: '#4bb5ef', color: '#fff', border: 'none' }}
+              disabled={mutation.isLoading || !commentText.trim()}
+            >
+              {mutation.isLoading ? 'Posting...' : 'Post'}
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
   const [feeds, setFeeds] = useState([]);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [likeStates, setLikeStates] = useState({}); // { [postId]: { liked: boolean, likeCount: number } }
-  const queryClient = useQueryClient();
+
 
   // Like mutation
   const likeMutation = useMutation({
     mutationFn: (postId) => toggleLike(postId),
-    onSuccess: (data, postId) => {
+    onSuccess: (postId) => {
       setLikeStates(prev => ({
         ...prev,
         [postId]: {
@@ -295,96 +377,7 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
                       </li>
                     </ul>
                   </div>
-                  {/* Static comments section, copied from index.html */}
-                  <div className="coment-area">
-                    <ul className="we-comet">
-                      <li>
-                        <div className="comet-avatar">
-                          <img src="/images/resources/comet-1.jpg" alt="" />
-                        </div>
-                        <div className="we-comment">
-                          <div className="coment-head">
-                            <h5><a href="/time-line" title="">Jason Borne</a></h5>
-                            <span>1 year ago</span>
-                            <a className="we-reply" href="#" title="Reply"><i className="fa fa-reply"></i></a>
-                          </div>
-                          <p>we are working for the dance and sing songs. this car is very awesome for the youngster. please vote this car and like our post</p>
-                        </div>
-                        <ul>
-                          <li>
-                            <div className="comet-avatar">
-                              <img src="/images/resources/comet-2.jpg" alt="" />
-                            </div>
-                            <div className="we-comment">
-                              <div className="coment-head">
-                                <h5><a href="/time-line" title="">Alexendra Dadrio</a></h5>
-                                <span>1 month ago</span>
-                                <a className="we-reply" href="#" title="Reply"><i className="fa fa-reply"></i></a>
-                              </div>
-                              <p>yes, really very awesome car i see the features of this car in the official website of <a href="#" title="">#Mercedes-Benz</a> and really impressed :-)</p>
-                            </div>
-                          </li>
-                          <li>
-                            <div className="comet-avatar">
-                              <img src="/images/resources/comet-3.jpg" alt="" />
-                            </div>
-                            <div className="we-comment">
-                              <div className="coment-head">
-                                <h5><a href="/time-line" title="">Olivia</a></h5>
-                                <span>16 days ago</span>
-                                <a className="we-reply" href="#" title="Reply"><i className="fa fa-reply"></i></a>
-                              </div>
-                              <p>i like lexus cars, lexus cars are most beautiful with the awesome features, but this car is really outstanding than lexus</p>
-                            </div>
-                          </li>
-                        </ul>
-                      </li>
-                      <li>
-                        <div className="comet-avatar">
-                          <img src="/images/resources/comet-1.jpg" alt="" />
-                        </div>
-                        <div className="we-comment">
-                          <div className="coment-head">
-                            <h5><a href="/time-line" title="">Donald Trump</a></h5>
-                            <span>1 week ago</span>
-                            <a className="we-reply" href="#" title="Reply"><i className="fa fa-reply"></i></a>
-                          </div>
-                          <p>we are working for the dance and sing songs. this video is very awesome for the youngster. please vote this video and like our channel <i className="em em-smiley"></i></p>
-                        </div>
-                      </li>
-                      <li>
-                        <a href="#" title="" className="showmore underline">more comments</a>
-                      </li>
-                      <li className="post-comment">
-                        <div className="comet-avatar">
-                          <img src="/images/resources/comet-1.jpg" alt="" />
-                        </div>
-                        <div className="post-comt-box">
-                          <form method="post">
-                            <textarea placeholder="Post your comment"></textarea>
-                            <div className="add-smiles">
-                              <span className="em em-expressionless" title="add icon"></span>
-                            </div>
-                            <div className="smiles-bunch">
-                              <i className="em em---1"></i>
-                              <i className="em em-smiley"></i>
-                              <i className="em em-anguished"></i>
-                              <i className="em em-laughing"></i>
-                              <i className="em em-angry"></i>
-                              <i className="em em-astonished"></i>
-                              <i className="em em-blush"></i>
-                              <i className="em em-disappointed"></i>
-                              <i className="em em-worried"></i>
-                              <i className="em em-kissing_heart"></i>
-                              <i className="em em-rage"></i>
-                              <i className="em em-stuck_out_tongue"></i>
-                            </div>
-                            <button type="submit"></button>
-                          </form>
-                        </div>
-                      </li>
-                    </ul>
-                  </div>
+                  <CommentsSection postId={feed.id} />
                 </div>
               </div>
             </div>

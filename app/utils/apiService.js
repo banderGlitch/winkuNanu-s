@@ -28,8 +28,24 @@ export const createPost = async ({ content, visibility, image }) => {
   return response.data;
 }; 
 
-
+// Toggle Like API
 export const toggleLike = async (postId) => {
     const res = await api.post(`/api/v1/post/toggleLike/${postId}`);
     return res.data;
 }
+
+// Fetch comments for a post (paginated)
+export const fetchComments = async ({ postId, page = 0, size = 10 }) => {
+  const res = await api.get(`/api/v1/post/comments/${postId}`, {
+    params: { page, size },
+  });
+  return res.data;
+};
+
+// Post a comment to a post
+export const postComment = async ({ postId, commentText }) => {
+  const res = await api.post(`/api/v1/post/comment`, null, {
+    params: { postId, commentText },
+  });
+  return res.data;
+};
