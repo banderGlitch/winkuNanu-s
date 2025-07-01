@@ -42,10 +42,12 @@ export const fetchComments = async ({ postId, page = 0, size = 10 }) => {
   return res.data;
 };
 
-// Post a comment to a post
-export const postComment = async ({ postId, commentText }) => {
+// Post a comment to a post (or reply to a comment)
+export const postComment = async ({ postId, commentText, parentCommentId }) => {
+  const params = { postId, commentText };
+  if (parentCommentId) params.parentCommentId = parentCommentId;
   const res = await api.post(`/api/v1/post/comment`, null, {
-    params: { postId, commentText },
+    params,
   });
   return res.data;
 };

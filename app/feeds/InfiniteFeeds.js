@@ -79,10 +79,15 @@ function FeedImage({ imageId }) {
 
 function CommentsSection({ postId }) {
   const [commentText, setCommentText] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showAll, setShowAll] = useState(false);
+  const [replyingTo, setReplyingTo] = useState(null); // comment id being replied to
+  const [replyText, setReplyText] = useState('');
+  const [isReplying, setIsReplying] = useState(false);
   const queryClient = useQueryClient();
 
   // Fetch comments
-  const { data, isLoading, isError } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['comments', postId],
     queryFn: () => fetchComments({ postId, page: 0, size: 10 }),
   });
@@ -90,10 +95,15 @@ function CommentsSection({ postId }) {
   // Post comment
   const mutation = useMutation({
     mutationFn: ({ postId, commentText }) => postComment({ postId, commentText }),
-    onSuccess: () => {
+    onSuccess: async () => {
       setCommentText('');
-      queryClient.invalidateQueries(['comments', postId]);
+      setIsSubmitting(true);
+      await refetch();
+      setIsSubmitting(false);
     },
+    onError: () => {
+      setIsSubmitting(false);
+    }
   });
 
   return (
@@ -105,7 +115,7 @@ function CommentsSection({ postId }) {
       ) : (
         <ul className="we-comet">
           {data?.data && data.data.length > 0 ? (
-            data.data.map((comment) => (
+            (showAll ? data.data : data.data.slice(0, 3)).map((comment) => (
               <li key={comment.id}>
                 <div className="comet-avatar">
                   <img src="/images/resources/comet-1.jpg" alt="" />
@@ -114,13 +124,122 @@ function CommentsSection({ postId }) {
                   <div className="coment-head">
                     <h5><a href="#" title="">{comment.username || 'User'}</a></h5>
                     <span>{comment.commentedAt ? new Date(comment.commentedAt).toLocaleString() : ''}</span>
+                    <a className="we-reply" href="#" title="Reply" onClick={e => { e.preventDefault(); setReplyingTo(comment.id); setReplyText(''); }}><i className="fa fa-reply"></i></a>
                   </div>
                   <p>{comment.comment}</p>
+                  {/* Reply input, only for the comment being replied to */}
+                  {replyingTo === comment.id && (
+                    <form
+                      onSubmit={async e => {
+                        e.preventDefault();
+                        if (!replyText.trim()) return;
+                        setIsReplying(true);
+                        await postComment({ postId, commentText: replyText, parentCommentId: comment.id });
+                        setIsReplying(false);
+                        setReplyingTo(null);
+                        setReplyText('');
+                        await refetch();
+                      }}
+                      style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                    >
+                      <input
+                        type="text"
+                        placeholder="Write a reply..."
+                        value={replyText}
+                        onChange={e => setReplyText(e.target.value)}
+                        style={{ flex: 1, padding: 6, borderRadius: 4, border: '1px solid #eee' }}
+                        disabled={isReplying}
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        style={{ padding: '6px 16px', borderRadius: 4, background: '#4bb5ef', color: '#fff', border: 'none', minWidth: 60, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                        disabled={isReplying || !replyText.trim()}
+                      >
+                        {isReplying ? (
+                          <div className={styles.spinner} style={{ width: 18, height: 18, margin: 0 }}>
+                            <div className={styles.bounce1}></div>
+                            <div className={styles.bounce2}></div>
+                            <div className={styles.bounce3}></div>
+                          </div>
+                        ) : 'Reply'}
+                      </button>
+                      <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); }} style={{ marginLeft: 4, background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>Cancel</button>
+                    </form>
+                  )}
+                  {/* Render replies if any */}
+                  {comment.replies && comment.replies.length > 0 && (
+                    <ul className="we-comet" style={{ marginLeft: 40 }}>
+                      {comment.replies.map(reply => (
+                        <li key={reply.id}>
+                          <div className="comet-avatar">
+                            <img src="/images/resources/comet-1.jpg" alt="" />
+                          </div>
+                          <div className="we-comment">
+                            <div className="coment-head">
+                              <h5><a href="#" title="">{reply.username || 'User'}</a></h5>
+                              <span>{reply.commentedAt ? new Date(reply.commentedAt).toLocaleString() : ''}</span>
+                              <a className="we-reply" href="#" title="Reply" onClick={e => { e.preventDefault(); setReplyingTo(reply.id); setReplyText(''); }}><i className="fa fa-reply"></i></a>
+                            </div>
+                            <p>{reply.comment}</p>
+                            {/* Reply input, only for the reply being replied to */}
+                            {replyingTo === reply.id && (
+                              <form
+                                onSubmit={async e => {
+                                  e.preventDefault();
+                                  if (!replyText.trim()) return;
+                                  setIsReplying(true);
+                                  await postComment({ postId, commentText: replyText, parentCommentId: reply.id });
+                                  setIsReplying(false);
+                                  setReplyingTo(null);
+                                  setReplyText('');
+                                  await refetch();
+                                }}
+                                style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}
+                              >
+                                <input
+                                  type="text"
+                                  placeholder="Write a reply..."
+                                  value={replyText}
+                                  onChange={e => setReplyText(e.target.value)}
+                                  style={{ flex: 1, padding: 6, borderRadius: 4, border: '1px solid #eee' }}
+                                  disabled={isReplying}
+                                  autoFocus
+                                />
+                                <button
+                                  type="submit"
+                                  style={{ padding: '6px 16px', borderRadius: 4, background: '#4bb5ef', color: '#fff', border: 'none', minWidth: 60, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                  disabled={isReplying || !replyText.trim()}
+                                >
+                                  {isReplying ? (
+                                    <div className={styles.spinner} style={{ width: 18, height: 18, margin: 0 }}>
+                                      <div className={styles.bounce1}></div>
+                                      <div className={styles.bounce2}></div>
+                                      <div className={styles.bounce3}></div>
+                                    </div>
+                                  ) : 'Reply'}
+                                </button>
+                                <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); }} style={{ marginLeft: 4, background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>Cancel</button>
+                              </form>
+                            )}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
               </li>
             ))
           ) : (
             <li><div style={{ textAlign: 'center', color: '#888' }}>No comments yet.</div></li>
+          )}
+          {/* More Comments Button */}
+          {data?.data && data.data.length > 3 && !showAll && (
+            <li style={{ textAlign: 'center' }}>
+              <a href="#" title="" className="showmore underline" onClick={e => { e.preventDefault(); setShowAll(true); }}>
+                more comments
+              </a>
+            </li>
           )}
         </ul>
       )}
@@ -134,6 +253,7 @@ function CommentsSection({ postId }) {
             onSubmit={e => {
               e.preventDefault();
               if (!commentText.trim()) return;
+              setIsSubmitting(true);
               mutation.mutate({ postId, commentText });
             }}
           >
@@ -143,14 +263,20 @@ function CommentsSection({ postId }) {
               value={commentText}
               onChange={e => setCommentText(e.target.value)}
               style={{ width: '80%', padding: 6, borderRadius: 4, border: '1px solid #eee' }}
-              disabled={mutation.isLoading}
+              disabled={isSubmitting}
             />
             <button
               type="submit"
-              style={{ marginLeft: 8, padding: '6px 16px', borderRadius: 4, background: '#4bb5ef', color: '#fff', border: 'none' }}
-              disabled={mutation.isLoading || !commentText.trim()}
+              style={{ marginLeft: 8, padding: '6px 16px', borderRadius: 4, background: '#4bb5ef', color: '#fff', border: 'none', minWidth: 60, minHeight: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              disabled={isSubmitting || !commentText.trim()}
             >
-              {mutation.isLoading ? 'Posting...' : 'Post'}
+              {isSubmitting ? (
+                <div className={styles.spinner} style={{ width: 18, height: 18, margin: 0 }}>
+                  <div className={styles.bounce1}></div>
+                  <div className={styles.bounce2}></div>
+                  <div className={styles.bounce3}></div>
+                </div>
+              ) : 'Post'}
             </button>
           </form>
         </div>
@@ -226,9 +352,13 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
 
   // Expose a method to refresh feeds from parent (e.g., after post)
   useImperativeHandle(ref, () => ({
-    refetchFeeds: () => {
+    refetchFeeds: async () => {
       setIsRefreshing(true);
-      return refetch().finally(() => setIsRefreshing(false));
+      try {
+        return await refetch();
+      } finally {
+        return setIsRefreshing(false);
+      }
     }
   }));
 
