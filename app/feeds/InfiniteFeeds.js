@@ -476,7 +476,7 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
             <div className="user-post">
               <div className="friend-info">
                 <figure>
-                  <img src="/images/resources/friend-avatar10.jpg" alt="" />
+                 <CommentAvatar imageId={feed.profileImageId} size={40} />
                 </figure>
                 <div className="friend-name">
                   <ins><a href="/time-line">{feed.authorName || 'User'}</a></ins>

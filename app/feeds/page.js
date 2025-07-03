@@ -1,10 +1,11 @@
 'use client';
-import { useState  , useRef} from 'react';
+import { useState  , useRef, useEffect} from 'react';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import ProtectedRoutes from '../components/ProtectedRoutes';
 import { createPost } from '../utils/apiService';
 import InfiniteFeeds from './InfiniteFeeds';
+import { fetchPicture } from '../utils/apiService';
 
 export default function Feeds() {
   const [content, setContent] = useState('');
@@ -72,6 +73,45 @@ export default function Feeds() {
     setModalContent('');
   };
 
+  // const ProfileImage = ({ imageId, size = 40 }) => {
+  //   const [imgUrl, setImgUrl] = useState(null);
+  
+  //   useEffect(() => {
+  //     let isMounted = true;
+  //     if (!imageId) {
+  //       setImgUrl("/images/resources/comet-2.jpg");
+  //       return;
+  //     }
+  //     fetchPicture(imageId)
+  //       .then((blob) => {
+  //         if (isMounted) {
+  //           const url = URL.createObjectURL(blob);
+  //           setImgUrl(url);
+  //         }
+  //       })
+  //       .catch(() => setImgUrl("/images/resources/comet-2.jpg"));
+  //     return () => {
+  //       isMounted = false;
+  //       // Clean up the object URL when the component unmounts
+  //       if (imgUrl) URL.revokeObjectURL(imgUrl);
+  //     };
+  //     // eslint-disable-next-line
+  //   }, [imageId]);
+  
+  //   return (
+  //     <img
+  //       src={imgUrl || "/images/resources/comet-2.jpg"}
+  //       alt="Profile"
+  //       style={{
+  //         width: size,
+  //         height: size,
+  //         borderRadius: "50%",
+  //         objectFit: "cover",
+  //       }}
+  //     />
+  //   );
+  // };
+  
   return (
     <>
       <ProtectedRoutes>
