@@ -214,7 +214,15 @@ function CommentsSection({ postId }) {
                             <div className="coment-head">
                               <h5><a href="#" title="">{reply.username || 'User'}</a></h5>
                               <span>{reply.commentedAt ? new Date(reply.commentedAt).toLocaleString() : ''}</span>
-                              <a className="we-reply" href="#" title="Reply" onClick={e => { e.preventDefault(); setReplyingTo(reply.id); setReplyText(''); }}><i className="fa fa-reply"></i></a>
+                              <a className="we-reply" href="#" title="Reply" 
+                                onClick={e => { 
+                                  if (reply.username === comment.username) return; // Disable if replying to own reply
+                                  e.preventDefault(); 
+                                  setReplyingTo(reply.id); 
+                                  setReplyText(''); 
+                                }}
+                                style={reply.username === comment.username ? { pointerEvents: 'none', opacity: 0.5, cursor: 'not-allowed' } : {}}
+                              ><i className="fa fa-reply"></i></a>
                             </div>
                             <p>{reply.comment}</p>
                             {/* Reply input, only for the reply being replied to */}
