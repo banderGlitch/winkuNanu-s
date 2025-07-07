@@ -69,7 +69,7 @@ const Header = () => {
           </Link>
         </div>
         <div className="top-area">
-          <ul className="main-menu">
+          {/* <ul className="main-menu">
             <li>
               <a href="#" title="">Home</a>
               <ul>
@@ -122,7 +122,7 @@ const Header = () => {
                 <li><a href="#" title="">Widgts</a></li>
               </ul>
             </li>
-          </ul>
+          </ul> */}
           <ul className="setting-area">
             <li>
               <a href="#" title="Search" data-ripple=""><i className="ti-search"></i></a>

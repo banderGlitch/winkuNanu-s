@@ -157,7 +157,7 @@ function CommentsSection({ postId }) {
                 </div>
                 <div className="we-comment">
                   <div className="coment-head">
-                    <h5><a href="#" title="">{comment.username || 'User'}</a></h5>
+                    <h5><a href={`/timeline/${comment.userId || 'user'}`} title="">{comment.username || 'User'}</a></h5>
                     <span>{comment.commentedAt ? new Date(comment.commentedAt).toLocaleString() : ''}</span>
                     <a className="we-reply" href="#" title="Reply" onClick={e => { e.preventDefault(); setReplyingTo(comment.id); setReplyText(''); }}><i className="fa fa-reply"></i></a>
                   </div>
@@ -212,7 +212,7 @@ function CommentsSection({ postId }) {
                           </div>
                           <div className="we-comment">
                             <div className="coment-head">
-                              <h5><a href="#" title="">{reply.username || 'User'}</a></h5>
+                              <h5><a href={`/timeline/${reply.userId || 'user'}`} title="">{reply.username || 'User'}</a></h5>
                               <span>{reply.commentedAt ? new Date(reply.commentedAt).toLocaleString() : ''}</span>
                               <a className="we-reply" href="#" title="Reply" 
                                 onClick={e => { 
@@ -487,7 +487,7 @@ const InfiniteFeeds = forwardRef(function InfiniteFeeds(props, ref) {
                  <CommentAvatar imageId={feed.profileImageId} size={40} />
                 </figure>
                 <div className="friend-name">
-                  <ins><a href="/time-line">{feed.authorName || 'User'}</a></ins>
+                  <ins><a href={`/timeline/${feed.authorId || 'user'}`}>{feed.authorName || 'User'}</a></ins>
                   <span>published: {new Date(feed.createdAt).toLocaleString()}</span>
                 </div>
                 <div className="post-meta">
