@@ -119,6 +119,7 @@ function CommentsSection({ postId }) {
   const [replyingTo, setReplyingTo] = useState(null); // comment id being replied to
   const [replyText, setReplyText] = useState('');
   const [isReplying, setIsReplying] = useState(false);
+  const [replyingToUsername, setReplyingToUsername] = useState(''); // store username for @mention
   const queryClient = useQueryClient();
 
   // Fetch comments
@@ -159,7 +160,7 @@ function CommentsSection({ postId }) {
                   <div className="coment-head">
                     <h5><a href={`/timeline/${comment.userId || 'user'}`} title="">{comment.username || 'User'}</a></h5>
                     <span>{comment.commentedAt ? new Date(comment.commentedAt).toLocaleString() : ''}</span>
-                    <a className="we-reply" href="#" title="Reply" onClick={e => { e.preventDefault(); setReplyingTo(comment.id); setReplyText(''); }}><i className="fa fa-reply"></i></a>
+                    <a className="we-reply" href="#" title="Reply" onClick={e => { e.preventDefault(); setReplyingTo(comment.id); setReplyText(''); setReplyingToUsername(comment.username || 'User'); }}><i className="fa fa-reply"></i></a>
                   </div>
                   <p>{comment.comment}</p>
                   {/* Reply input, only for the comment being replied to */}
@@ -173,13 +174,14 @@ function CommentsSection({ postId }) {
                         setIsReplying(false);
                         setReplyingTo(null);
                         setReplyText('');
+                        setReplyingToUsername('');
                         await refetch();
                       }}
                       style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}
                     >
                       <input
                         type="text"
-                        placeholder="Write a reply..."
+                        placeholder={`Write a reply...`}
                         value={replyText}
                         onChange={e => setReplyText(e.target.value)}
                         style={{ flex: 1, padding: 6, borderRadius: 4, border: '1px solid #eee' }}
@@ -199,7 +201,7 @@ function CommentsSection({ postId }) {
                           </div>
                         ) : 'Reply'}
                       </button>
-                      <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); }} style={{ marginLeft: 4, background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>Cancel</button>
+                      <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); setReplyingToUsername(''); }} style={{ marginLeft: 4, background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>Cancel</button>
                     </form>
                   )}
                   {/* Render replies if any */}
@@ -216,12 +218,11 @@ function CommentsSection({ postId }) {
                               <span>{reply.commentedAt ? new Date(reply.commentedAt).toLocaleString() : ''}</span>
                               <a className="we-reply" href="#" title="Reply" 
                                 onClick={e => { 
-                                  if (reply.username === comment.username) return; // Disable if replying to own reply
                                   e.preventDefault(); 
                                   setReplyingTo(reply.id); 
-                                  setReplyText(''); 
+                                  setReplyingToUsername(reply.username || 'User');
+                                  setReplyText(`@${reply.username || 'User'} `); // Prefill with @username
                                 }}
-                                style={reply.username === comment.username ? { pointerEvents: 'none', opacity: 0.5, cursor: 'not-allowed' } : {}}
                               ><i className="fa fa-reply"></i></a>
                             </div>
                             <p>{reply.comment}</p>
@@ -232,17 +233,19 @@ function CommentsSection({ postId }) {
                                   e.preventDefault();
                                   if (!replyText.trim()) return;
                                   setIsReplying(true);
-                                  await postComment({ postId, commentText: replyText, parentCommentId: reply.id });
+                                  // Instead of nesting, post as main-thread comment with @username
+                                  await postComment({ postId, commentText: replyText });
                                   setIsReplying(false);
                                   setReplyingTo(null);
                                   setReplyText('');
+                                  setReplyingToUsername('');
                                   await refetch();
                                 }}
                                 style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8 }}
                               >
                                 <input
                                   type="text"
-                                  placeholder="Write a reply..."
+                                  placeholder={`Reply as main comment...`}
                                   value={replyText}
                                   onChange={e => setReplyText(e.target.value)}
                                   style={{ flex: 1, padding: 6, borderRadius: 4, border: '1px solid #eee' }}
@@ -262,7 +265,7 @@ function CommentsSection({ postId }) {
                                     </div>
                                   ) : 'Reply'}
                                 </button>
-                                <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); }} style={{ marginLeft: 4, background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>Cancel</button>
+                                <button type="button" onClick={() => { setReplyingTo(null); setReplyText(''); setReplyingToUsername(''); }} style={{ marginLeft: 4, background: 'transparent', border: 'none', color: '#888', cursor: 'pointer' }}>Cancel</button>
                               </form>
                             )}
                           </div>
