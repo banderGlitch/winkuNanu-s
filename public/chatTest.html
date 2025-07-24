@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Chat WebSocket Tester</title>
+</head>
+
+<body>
+    <h2>WebSocket Chat Tester</h2>
+
+    <label>JWT Token:</label><br />
+    <input type="text" id="token" size="100"><br /><br />
+
+    <label>Receiver ID (UUID):</label><br />
+    <input type="text" id="receiverId" size="50"><br /><br />
+
+    <label>Conversation ID (optional):</label><br />
+    <input type="text" id="conversationId" size="50"><br /><br />
+
+    <label>Message:</label><br />
+    <input type="text" id="message" size="50"><br /><br />
+
+    <label>Last Seen Message ID:</label><br />
+    <input type="text" id="lastSeenMessageId" size="50"><br /><br />
+
+    <button onclick="connect()">Connect</button>
+    <button onclick="sendMessage()">Send Message</button>
+    <button onclick="sendTyping()">Send Typing</button>
+    <button onclick="sendAccept()">Accept Intro</button>
+    <button onclick="sendSeen()">Send Seen (Bulk)</button>
+    <button onclick="sendTest()">Send Test Message</button>
+
+    <h3>Logs</h3>
+    <pre id="log" style="background:#f4f4f4; padding:10px; height:300px; overflow:auto;"></pre>
+
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
+    <script>
+        let stompClient = null;
+
+        function log(msg) {
+            const logElem = document.getElementById('log');
+            logElem.textContent += msg + '\\n';
+            logElem.scrollTop = logElem.scrollHeight;
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            const socket = new SockJS("http://host.docker.internal:8080/ws?token=" + token);
+            stompClient = Stomp.over(socket);
+            stompClient.debug = function (msg) { console.log("[STOMP DEBUG]", msg); };
+
+            stompClient.connect({}, function (frame) {
+                log('✅ Connected: ' + frame);
+
+                stompClient.subscribe('/user/queue/messages', (msg) => {
+                    log('📩 Message Received: ' + msg.body);
+                });
+
+                stompClient.subscribe('/user/queue/typing', (msg) => {
+                    log('⌨️ Typing: ' + msg.body);
+                });
+
+                stompClient.subscribe('/user/queue/message-seen', (msg) => {
+                    log('👁 Seen Notification: ' + msg.body);
+                });
+
+                stompClient.subscribe('/user/queue/conversation-accepted', (msg) => {
+                    log('✅ Conversation Accepted: ' + msg.body);
+                });
+
+                stompClient.subscribe('/user/queue/ack', (msg) => {
+                    log('✅ Success ACK: ' + msg.body);
+                });
+
+                stompClient.subscribe('/user/queue/errors', (msg) => {
+                    log('❌ Error ACK: ' + msg.body);
+                });
+
+                stompClient.subscribe('/user/queue/test', (msg) => {
+                    log('✅ Test message: ' + msg.body);
+                });
+            });
+        }
+
+        function sendMessage() {
+            const receiverId = document.getElementById('receiverId').value;
+            const conversationId = document.getElementById('conversationId').value;
+            const content = document.getElementById('message').value;
+
+            const payload = {
+                receiverId,
+                content,
+                ...(conversationId && { conversationId })
+            };
+
+            stompClient.send('/app/chat.send', {}, JSON.stringify(payload));
+            log('🚀 Sent Message: ' + JSON.stringify(payload));
+        }
+
+        function sendTyping() {
+            const receiverId = document.getElementById('receiverId').value;
+            const conversationId = document.getElementById('conversationId').value;
+
+            const typingIndicator = {
+                receiverId,
+                conversationId,
+                type: "TYPING_START"
+            };
+
+            stompClient.send('/app/chat.typing', {}, JSON.stringify(typingIndicator));
+            log('✍ Sent Typing: ' + JSON.stringify(typingIndicator));
+        }
+
+        function sendAccept() {
+            const conversationId = document.getElementById('conversationId').value;
+
+            const payload = {
+                conversationId
+            };
+
+            stompClient.send('/app/chat.accept', {}, JSON.stringify(payload));
+            log('✅ Sent Accept: ' + JSON.stringify(payload));
+        }
+
+        function sendSeen() {
+            const conversationId = document.getElementById('conversationId').value;
+            const lastSeenMessageId = document.getElementById('lastSeenMessageId').value;
+
+            const payload = {
+                conversationId,
+                lastSeenMessageId
+            };
+
+            stompClient.send('/app/chat.seen.bulk', {}, JSON.stringify(payload));
+            log('👁 Sent Seen Bulk: ' + JSON.stringify(payload));
+        }
+
+        function sendTest() {
+            stompClient.send('/app/test.send', {}, {});
+            log('🧪 Sent Test Message');
+        }
+    </script>
+</body>
+
+</html>

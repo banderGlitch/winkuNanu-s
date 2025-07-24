@@ -12,6 +12,8 @@ function ProfileAvatar({ imageId, size = 120 }) {
   const [loading, setLoading] = useState(!!imageId);
   const [error, setError] = useState(false);
 
+ 
+
   useEffect(() => {
     if (!imageId) return;
     setLoading(true);
@@ -165,18 +167,16 @@ export default function UserTimelinePage() {
       {/* Top Area with Cover Photo and Profile */}
       <section>
         <div className="feature-photo">
-          <figure>
-            <img src="/images/resources/timeline-1.jpg" alt="cover" style={{ width: '100%', height: '300px', objectFit: 'cover' }} />
-          </figure>
+          <figure><img src="/images/resources/timeline-1.jpg" alt="" /></figure>
           <div className="add-btn">
-            <span>{userData.followers} followers</span>
+            <span>1205 followers</span>
             <a href="#" title="" data-ripple="">Add Friend</a>
           </div>
           <form className="edit-phto">
             <i className="fa fa-camera-retro"></i>
             <label className="fileContainer">
               Edit Cover Photo
-              <input type="file"/>
+              <input type="file" />
             </label>
           </form>
           <div className="container-fluid">
@@ -184,12 +184,12 @@ export default function UserTimelinePage() {
               <div className="col-lg-2 col-sm-3">
                 <div className="user-avatar">
                   <figure>
-                    <ProfileAvatar imageId={userData.profileImageId} />
+                    <img src="/images/resources/user-avatar.jpg" alt="" />
                     <form className="edit-phto">
                       <i className="fa fa-camera-retro"></i>
                       <label className="fileContainer">
                         Edit Display Photo
-                        <input type="file"/>
+                        <input type="file" />
                       </label>
                     </form>
                   </figure>
@@ -199,17 +199,17 @@ export default function UserTimelinePage() {
                 <div className="timeline-info">
                   <ul>
                     <li className="admin-name">
-                      <h5>{userData.name}</h5>
-                      <span>{userData.role}</span>
+                      <h5>Janice Griffith</h5>
+                      <span>Group Admin</span>
                     </li>
                     <li>
-                      <a className="active" href={`/timeline/${userId}`} title="" data-ripple="">time line</a>
-                      <a className="" href={`/timeline/${userId}/photos`} title="" data-ripple="">Photos</a>
-                      <a className="" href={`/timeline/${userId}/videos`} title="" data-ripple="">Videos</a>
-                      <a className="" href={`/timeline/${userId}/friends`} title="" data-ripple="">Friends</a>
-                      <a className="" href={`/timeline/${userId}/groups`} title="" data-ripple="">Groups</a>
-                      <a className="" href={`/timeline/${userId}/about`} title="" data-ripple="">about</a>
-                      <a className="" href="#" title="" data-ripple="">more</a>
+                      <a className="active" href="#" title="" data-ripple="">Time Line</a>
+                      <a className="" href="#" title="" data-ripple="">Photos</a>
+                      <a className="" href="#" title="" data-ripple="">Videos</a>
+                      <a className="" href="#" title="" data-ripple="">Friends</a>
+                      <a className="" href="#" title="" data-ripple="">Groups</a>
+                      <a className="" href="#" title="" data-ripple="">About</a>
+                      <a className="" href="#" title="" data-ripple="">More</a>
                     </li>
                   </ul>
                 </div>
@@ -299,20 +299,20 @@ export default function UserTimelinePage() {
                             <div className="activity-meta">
                               <i>10 hours Ago</i>
                               <span><a href="#" title="">Commented on Video posted </a></span>
-                              <h6>by <a href="/feeds">black demon.</a></h6>
+                              <h6>by <a href="#">black demon.</a></h6>
                             </div>
                           </li>
                           <li>
                             <div className="activity-meta">
                               <i>30 Days Ago</i>
-                              <span><a href="/feeds" title="">Posted your status. "Hello guys, how are you?"</a></span>
+                              <span><a href="#" title="">Posted your status. “Hello guys, how are you?”</a></span>
                             </div>
                           </li>
                           <li>
                             <div className="activity-meta">
                               <i>2 Years Ago</i>
                               <span><a href="#" title="">Share a video on her timeline.</a></span>
-                              <h6>"<a href="/feeds">you are so funny mr.been.</a>"</h6>
+                              <h6>"<a href="#">you are so funny mr.been.</a>"</h6>
                             </div>
                           </li>
                         </ul>
@@ -323,35 +323,35 @@ export default function UserTimelinePage() {
                           <li>
                             <figure><img src="/images/resources/friend-avatar2.jpg" alt="" /></figure>
                             <div className="friend-meta">
-                              <h4><a href="/timeline/user1" title="">Kelly Bill</a></h4>
+                              <h4><a href="#" title="">Kelly Bill</a></h4>
                               <a href="#" title="" className="underline">Add Friend</a>
                             </div>
                           </li>
                           <li>
                             <figure><img src="/images/resources/friend-avatar4.jpg" alt="" /></figure>
                             <div className="friend-meta">
-                              <h4><a href="/timeline/user2" title="">Issabel</a></h4>
+                              <h4><a href="#" title="">Issabel</a></h4>
                               <a href="#" title="" className="underline">Add Friend</a>
                             </div>
                           </li>
                           <li>
                             <figure><img src="/images/resources/friend-avatar6.jpg" alt="" /></figure>
                             <div className="friend-meta">
-                              <h4><a href="/timeline/user3" title="">Andrew</a></h4>
+                              <h4><a href="#" title="">Andrew</a></h4>
                               <a href="#" title="" className="underline">Add Friend</a>
                             </div>
                           </li>
                           <li>
                             <figure><img src="/images/resources/friend-avatar8.jpg" alt="" /></figure>
                             <div className="friend-meta">
-                              <h4><a href="/timeline/user4" title="">Sophia</a></h4>
+                              <h4><a href="#" title="">Sophia</a></h4>
                               <a href="#" title="" className="underline">Add Friend</a>
                             </div>
                           </li>
                           <li>
                             <figure><img src="/images/resources/friend-avatar3.jpg" alt="" /></figure>
                             <div className="friend-meta">
-                              <h4><a href="/timeline/user5" title="">Allen</a></h4>
+                              <h4><a href="#" title="">Allen</a></h4>
                               <a href="#" title="" className="underline">Add Friend</a>
                             </div>
                           </li>
@@ -533,8 +533,8 @@ export default function UserTimelinePage() {
                               <span className="status f-online"></span>
                             </figure>
                             <div className="friendz-meta">
-                              <a href="/timeline/user1">bucky barnes</a>
-                              <i>bucky@email.com</i>
+                              <a href="#">bucky barnes</a>
+                              <i><a href="#">[email&#160;protected]</a></i>
                             </div>
                           </li>
                           <li>
@@ -543,8 +543,8 @@ export default function UserTimelinePage() {
                               <span className="status f-away"></span>
                             </figure>
                             <div className="friendz-meta">
-                              <a href="/timeline/user2">Sarah Loren</a>
-                              <i>sarah@email.com</i>
+                              <a href="#">Sarah Loren</a>
+                              <i><a href="#">sarah@email.com</a></i>
                             </div>
                           </li>
                           <li>
@@ -553,8 +553,8 @@ export default function UserTimelinePage() {
                               <span className="status f-off"></span>
                             </figure>
                             <div className="friendz-meta">
-                              <a href="/timeline/user3">jason borne</a>
-                              <i>jason@email.com</i>
+                              <a href="#">jason borne</a>
+                              <i><a href="#">jason@email.com</a></i>
                             </div>
                           </li>
                           <li>
@@ -563,8 +563,8 @@ export default function UserTimelinePage() {
                               <span className="status f-off"></span>
                             </figure>
                             <div className="friendz-meta">
-                              <a href="/timeline/user4">Cameron diaz</a>
-                              <i>cameron@email.com</i>
+                              <a href="#">Cameron diaz</a>
+                              <i><a href="#">cameron@email.com</a></i>
                             </div>
                           </li>
                           <li>
@@ -573,11 +573,42 @@ export default function UserTimelinePage() {
                               <span className="status f-online"></span>
                             </figure>
                             <div className="friendz-meta">
-                              <a href="/timeline/user5">daniel warber</a>
-                              <i>daniel@email.com</i>
+                              <a href="#">daniel warber</a>
+                              <i><a href="#">daniel@email.com</a></i>
                             </div>
                           </li>
                         </ul>
+                        {/* Chat box placeholder */}
+                        <div className="chat-box">
+                          <div className="chat-head">
+                            <span className="status f-online"></span>
+                            <h6>Bucky Barnes</h6>
+                            <div className="more">
+                              <span><i className="ti-more-alt"></i></span>
+                              <span className="close-mesage"><i className="ti-close"></i></span>
+                            </div>
+                          </div>
+                          <div className="chat-list">
+                            <ul>
+                              <li className="me">
+                                <div className="chat-thumb"><img src="/images/resources/chatlist1.jpg" alt="" /></div>
+                                <div className="notification-event">
+                                  <span className="chat-message-item">Hi James! Please remember to buy the food for tomorrow! I’m gonna be handling the gifts and Jake’s gonna get the drinks</span>
+                                  <span className="notification-date"><time className="entry-date updated">Yesterday at 8:10pm</time></span>
+                                </div>
+                              </li>
+                            </ul>
+                            <form className="text-box">
+                              <textarea placeholder="Post enter to post..."></textarea>
+                              <div className="add-smiles"><span title="add icon" className="em em-expressionless"></span></div>
+                              <div className="smiles-bunch">
+                                <i className="em em---1"></i>
+                                <i className="em em-smiley"></i>
+                              </div>
+                              <button type="submit"></button>
+                            </form>
+                          </div>
+                        </div>
                       </div>
                     </aside>
                   </div>
