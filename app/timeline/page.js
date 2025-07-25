@@ -2,10 +2,12 @@
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { useState, useEffect } from 'react';
-import { fetchFeeds, fetchPicture } from '../utils/apiService';
+import { fetchFeeds, fetchPicture, getUserIdFromToken } from '../utils/apiService';
+import { jwtDecode } from "jwt-decode";
 import styles from '../components/Styles/Spinner.module.css';
 import ProtectedRoutes from '../components/ProtectedRoutes';
 import Header from '../components/Header';
+import ChatBox from '../components/ChatBox';
 
 // Avatar component for profile pictures
 function ProfileAvatar({ imageId, size = 120 }) {
@@ -136,28 +138,37 @@ function FeedImage({ imageId }) {
 
 export default function TimelinePage() {
   const params = useParams();
-  const userId = params?.userId || 'default'; // Get userId from URL params
+  const userId = params?.userId || 'default';
 
-  // Mock user data - in real app, you'd fetch this from API
-  const userData = {
-    name: 'Janice Griffith',
-    role: 'Group Admin',
-    followers: 1205,
-    profileImageId: null, // Will use default image
-    coverImageId: null
-  };
+  // Always call hooks at the top
+  const [userData, setUserData] = useState(null);
+  const [activeTab, setActiveTab] = useState('posts');
 
-  // Fetch user's posts
+  useEffect(() => {
+    const token = localStorage.getItem('accessToken');
+    if (token) {
+      try {
+        const decoded = jwtDecode(token);
+        setUserData(decoded);
+      } catch (e) {
+        setUserData(null);
+      }
+    }
+  }, []);
+
+  // Always call useQuery, but only fetch if userData is ready
   const { data: userPosts, isLoading, error } = useQuery({
-    queryKey: ['userPosts', userId],
+    queryKey: ['userPosts', userId, userData?.name],
     queryFn: async () => {
-      // In a real app, you'd have an API endpoint for user posts
-      // For now, we'll fetch all feeds and filter by author
+      if (!userData) return [];
       const response = await fetchFeeds({ pageParam: 0, limit: 50 });
       return response?.data?.filter(post => post.authorName === userData.name) || [];
     },
+    enabled: !!userData,
     staleTime: 10000,
   });
+
+  if (!userData) return <div>Loading profile...</div>;
 
   return (
     <ProtectedRoutes>
@@ -186,6 +197,7 @@ export default function TimelinePage() {
                 <div className="user-avatar">
                   <figure>
                     <ProfileAvatar imageId={userData.profileImageId} />
+                    <div style={{textAlign: 'center', marginTop: 12, fontWeight: 600, fontSize: 18}}>{userData.name}</div>
                     <form className="edit-phto">
                       <i className="fa fa-camera-retro"></i>
                       <label className="fileContainer">
@@ -197,20 +209,21 @@ export default function TimelinePage() {
                 </div>
               </div>
               <div className="col-lg-10 col-sm-9">
+
                 <div className="timeline-info">
                   <ul>
                     <li className="admin-name">
-                      <h5>{userData.name}</h5>
-                      <span>{userData.role}</span>
+                      <h5>{userData.sub}</h5>
+                      <span>{userData.userId}</span>
                     </li>
                     <li>
-                      <a className="active" href={`/timeline/${userId}`} title="" data-ripple="">time line</a>
+                      <a className={activeTab === 'posts' ? 'active' : ''} href="#" onClick={e => { e.preventDefault(); setActiveTab('posts'); }}>Time Line</a>
                       <a className="" href={`/timeline/${userId}/photos`} title="" data-ripple="">Photos</a>
                       <a className="" href={`/timeline/${userId}/videos`} title="" data-ripple="">Videos</a>
                       <a className="" href={`/timeline/${userId}/friends`} title="" data-ripple="">Friends</a>
                       <a className="" href={`/timeline/${userId}/groups`} title="" data-ripple="">Groups</a>
-                      <a className="" href={`/timeline/${userId}/about`} title="" data-ripple="">about</a>
                       <a className="" href="#" title="" data-ripple="">more</a>
+                      <a className={activeTab === 'chat' ? 'active' : ''} href="#" title="" data-ripple="" onClick={e => { e.preventDefault(); setActiveTab('chat'); }}>Chat</a>
                     </li>
                   </ul>
                 </div>
@@ -361,7 +374,7 @@ export default function TimelinePage() {
                     </aside>
                   </div>
 
-                  {/* Center Content - User Posts */}
+                  {/* Center Content - Tabs */}
                   <div className="col-lg-6">
                     <div className="loadMore">
                       {/* Create Post Box */}
@@ -408,7 +421,6 @@ export default function TimelinePage() {
                           </div>
                         </div>
                       </div>
-
                       {/* User Posts */}
                       {isLoading ? (
                         <div style={{ textAlign: 'center', padding: 20 }}>
@@ -586,9 +598,15 @@ export default function TimelinePage() {
               </div>
             </div>
           </div>
+          </div>
+        </section>
+      </div> {/* <-- This closes .theme-layout */}
+      {/* Render floating ChatBox if Chat tab is active */}
+      {activeTab === 'chat' && (
+        <div style={{ position: 'fixed', bottom: 32, right: 32, zIndex: 1000 }}>
+          <ChatBox />
         </div>
-      </section>
-    </div>
+      )}
     </ProtectedRoutes>
   );
 } 

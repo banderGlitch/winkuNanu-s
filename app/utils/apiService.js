@@ -1,4 +1,6 @@
 import api from './axiosInstance';
+import { jwtDecode } from "jwt-decode";
+
 
 
 // Feeds API for infinite scroll
@@ -51,3 +53,62 @@ export const postComment = async ({ postId, commentText, parentCommentId }) => {
   });
   return res.data;
 };
+
+// Fetch all conversations for the current user
+export const fetchUserConversations = async () => {
+  const res = await api.get('/api/v1/chat/me/conversations');
+  return res.data;
+};
+
+// Fetch messages for a specific conversation
+export const fetchConversationMessages = async (conversationId, page = 0, size = 20) => {
+  const res = await api.get(`/api/v1/chat/conversations/${conversationId}/messages`, {
+    params: { page, size },
+  });
+  return res.data;
+};
+
+// Fetch followers for the current user
+export const fetchFollowers = async () => {
+  const res = await api.get('/api/v1/follow/followers');
+  return res.data;
+};
+
+// Accept an introductory message/conversation
+export const acceptIntroductoryMessage = async (conversationId) => {
+  // Adjust the payload/params as per your backend's requirements
+  const res = await api.post('/api/v1/chat/accept', { conversationId });
+  return res.data;
+};
+
+// Fetch current logged-in user
+export const fetchCurrentUser = async () => {
+  const res = await api.get('/api/v1/auth/me');
+  return res.data;
+};
+
+// Decode JWT to get user UUID
+export function getUserIdFromToken() {
+  const token = localStorage.getItem('accessToken');
+  if (!token) return null;
+  try {
+    const decoded = jwtDecode(token);
+    console.log(decoded);
+    // Adjust this depending on your JWT structure
+    return decoded.sub || decoded.userId || decoded.uuid;
+  } catch (e) {
+    return null;
+  }
+}
+
+// Fetch connected WebSocket users
+export const fetchConnectedUsers = async () => {
+  const res = await api.get('/api/v1/chat/ws/users');
+  return res.data;
+};
+
+// Fetch user profile by UUID
+export async function fetchUserProfile(uuid) {
+  const res = await api.get(`/api/v1/profile/${uuid}`);
+  return res.data;
+}
