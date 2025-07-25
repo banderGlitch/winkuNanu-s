@@ -15,6 +15,8 @@ export default function ChatBox() {
   const [message, setMessage] = useState('');
   const chatEndRef = React.useRef(null);
   const stompClient = React.useRef(null);
+  const [typingStatus, setTypingStatus] = useState(false);
+  const typingTimeoutRef = React.useRef(null);
 
   // Get current user from JWT
   useEffect(() => {
@@ -68,9 +70,16 @@ export default function ChatBox() {
       onConnect: () => {
         client.subscribe('/user/queue/messages', (msg) => {
           const body = JSON.parse(msg.body);
-          // Only add message if it belongs to the selected conversation
           if (selectedConversation && body.conversationId === selectedConversation.conversationId) {
             setMessages((prev) => [...prev, body]);
+          }
+        });
+        client.subscribe('/user/queue/typing', (msg) => {
+          const body = JSON.parse(msg.body);
+          if (selectedConversation && body.conversationId === selectedConversation.conversationId) {
+            setTypingStatus(true);
+            if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+            typingTimeoutRef.current = setTimeout(() => setTypingStatus(false), 2000);
           }
         });
       },
@@ -84,6 +93,7 @@ export default function ChatBox() {
         stompClient.current.deactivate();
         stompClient.current = null;
       }
+      if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
     };
   }, [currentUser, selectedConversation]);
 
@@ -116,6 +126,18 @@ export default function ChatBox() {
     stompClient.current.publish({ destination: '/app/chat.send', body: JSON.stringify(payload) });
     setMessages((prev) => [...prev, { senderId: currentUser.userId, content: message }]);
     setMessage('');
+  }
+
+  // Send typing event
+  function handleTyping() {
+    if (!selectedConversation || !stompClient.current || !stompClient.current.active) return;
+    const receiverId = getOtherParticipant(selectedConversation);
+    const payload = {
+      receiverId,
+      conversationId: selectedConversation.conversationId,
+      type: 'TYPING_START',
+    };
+    stompClient.current.publish({ destination: '/app/chat.typing', body: JSON.stringify(payload) });
   }
 
   if (!currentUser) return <div>Loading chat...</div>;
@@ -153,17 +175,23 @@ export default function ChatBox() {
         )}
       </div>
       {/* Chat Window */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
         {selectedConversation ? (
           <>
-            <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center' }}>
+            <div style={{ padding: 16, borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', position: 'relative' }}>
               <img src={'/images/resources/friend-avatar3.jpg'} alt="avatar" style={{ width: 40, height: 40, borderRadius: '50%', marginRight: 12 }} />
-              <div>
+              <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{getOtherParticipant(selectedConversation)}</div>
-                {onlineUsers.includes(getOtherParticipant(selectedConversation)) && <span style={{ fontSize: 12, color: '#4caf50' }}>Online</span>}
+                {typingStatus && (
+                  <div style={{ fontSize: 13, color: '#4caf50', marginTop: 2 }}>
+                    Typing...
+                  </div>
+                )}
+                {onlineUsers.includes(getOtherParticipant(selectedConversation)) && <span style={{ fontSize: 12, color: '#4caf50', marginLeft: 8 }}>Online</span>}
               </div>
             </div>
-            <div style={{ flex: 1, padding: 16, background: '#f7f7f7', overflowY: 'auto' }}>
+            {/* Chat messages area with fixed height and scroll */}
+            <div style={{ flex: 1, minHeight: 0, maxHeight: 400, height: '60vh', overflowY: 'auto', background: '#f7f7f7', position: 'relative', padding: 16 }}>
               {loadingMessages ? (
                 <div>Loading messages...</div>
               ) : (
@@ -181,8 +209,8 @@ export default function ChatBox() {
                 </ul>
               )}
             </div>
-            <form onSubmit={handleSendMessage} style={{ display: 'flex', alignItems: 'center', borderTop: '1px solid #eee', padding: 12, background: '#fff' }}>
-              <input type="text" value={message} onChange={e => setMessage(e.target.value)} placeholder="Type a message..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15, background: 'transparent' }} />
+            <form onSubmit={handleSendMessage} style={{ display: 'flex', alignItems: 'center', borderTop: '1px solid #eee', padding: 12, background: '#fff', position: 'relative', zIndex: 20 }}>
+              <input type="text" value={message} onChange={e => setMessage(e.target.value)} onInput={handleTyping} placeholder="Type a message..." style={{ flex: 1, border: 'none', outline: 'none', fontSize: 15, background: 'transparent' }} />
               <button type="submit" style={{ background: 'none', border: 'none', marginLeft: 8, color: '#2196f3', fontSize: 22, cursor: 'pointer' }}>
                 <i className="fa fa-paper-plane"></i>
               </button>
