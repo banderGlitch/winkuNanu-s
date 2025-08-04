@@ -47,7 +47,7 @@
 
         function connect() {
             const token = document.getElementById('token').value;
-            const socket = new SockJS("http://host.docker.internal:8080/ws?token=" + token);
+            const socket = new SockJS("http://localhost:3000/ws?token=" + token);
             stompClient = Stomp.over(socket);
             stompClient.debug = function (msg) { console.log("[STOMP DEBUG]", msg); };
 
