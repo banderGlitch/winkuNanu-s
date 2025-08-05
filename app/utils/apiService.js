@@ -63,7 +63,7 @@ export const fetchUserConversations = async () => {
 // Fetch messages for a specific conversation
 export const fetchConversationMessages = async (conversationId, page = 0, size = 20) => {
   const res = await api.get(`/api/v1/chat/conversations/${conversationId}/messages`, {
-    params: { page, size },
+    params: { page, size, sort: 'asc' }, // Use ascending order (oldest first) for chat
   });
   return res.data;
 };
