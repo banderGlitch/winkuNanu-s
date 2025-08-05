@@ -195,12 +195,19 @@ export default function ChatBox() {
                  // Create new messages array with the new message at the end
                  const updatedMessages = [...oldData.messages, normalizedMessage];
 
-                 // Always scroll to bottom for new messages
-                 setTimeout(() => {
-                   if (listRef.current) {
-                     listRef.current.scrollToItem(updatedMessages.length - 1, 'end');
-                   }
-                 }, 100);
+                 // Only auto-scroll if user is near the bottom (WhatsApp behavior)
+                 const totalHeight = updatedMessages.length * 80;
+                 const isNearBottom = scrollPosition > (totalHeight - 400);
+                 
+                 if (isNearBottom) {
+                   setTimeout(() => {
+                     if (listRef.current) {
+                       listRef.current.scrollToItem(updatedMessages.length - 1, 'end');
+                     }
+                   }, 100);
+                 } else {
+                   console.log('📱 New message received but user is scrolling up - maintaining position');
+                 }
 
                  return {
                    ...oldData,
@@ -444,21 +451,26 @@ export default function ChatBox() {
     }
   }, [selectedConversation?.conversationId]);
 
-  // Auto-scroll to bottom for new messages - Only when user is near bottom
-  useEffect(() => {
-    if (messages.length > 0 && listRef.current) {
-      // Only auto-scroll if user is already near the bottom
-      const isNearBottom = scrollPosition > (messages.length * 80) - 500; // Within 500px of bottom
-      
-      if (isNearBottom) {
-        setTimeout(() => {
-          if (listRef.current) {
-            listRef.current.scrollToItem(messages.length - 1, 'end');
-          }
-        }, 50);
-      }
-    }
-  }, [messages.length, scrollPosition]);
+     // Auto-scroll to bottom for new messages - Only when user is near bottom (WhatsApp style)
+   useEffect(() => {
+     if (messages.length > 0 && listRef.current) {
+       // Calculate if user is near the bottom (within 200px of the bottom)
+       const totalHeight = messages.length * 80; // 80 is itemSize
+       const isNearBottom = scrollPosition > (totalHeight - 400); // Within 400px of bottom
+       
+       // Only auto-scroll if user is already near the bottom
+       if (isNearBottom) {
+         setTimeout(() => {
+           if (listRef.current) {
+             listRef.current.scrollToItem(messages.length - 1, 'end');
+           }
+         }, 50);
+       } else {
+         // User is scrolling up - don't auto-scroll, maintain their position
+         console.log('📱 User is scrolling up, maintaining scroll position');
+       }
+     }
+   }, [messages.length, scrollPosition]);
 
   // Force scroll to bottom when conversation changes
   useEffect(() => {
