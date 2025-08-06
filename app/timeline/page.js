@@ -8,6 +8,7 @@ import styles from '../components/Styles/Spinner.module.css';
 import ProtectedRoutes from '../components/ProtectedRoutes';
 import Header from '../components/Header';
 import ChatBox from '../components/ChatBox';
+import Friends, { FriendsSidebar } from '../components/Friends';
 
 // Avatar component for profile pictures
 function ProfileAvatar({ imageId, size = 120 }) {
@@ -143,6 +144,41 @@ export default function TimelinePage() {
   // Always call hooks at the top
   const [userData, setUserData] = useState(null);
   const [activeTab, setActiveTab] = useState('posts');
+  const [selectedConversationId, setSelectedConversationId] = useState(null);
+
+  // Listen for chat tab switching from Friends component
+  useEffect(() => {
+    const handleSwitchToChat = (event) => {
+      console.log('📱 Timeline: Received switchToChat event:', event.detail);
+      console.log('📱 Timeline: Current activeTab:', activeTab);
+      
+      // Switch to chat tab
+      setActiveTab('chat');
+      
+      // For new chat type, we don't set selectedConversationId yet
+      // The user will click on the conversation in the list to start
+      if (event.detail.type === 'newChat') {
+        console.log('📱 Timeline: New chat initiated with user:', event.detail.userName);
+        // Don't set selectedConversationId - let user click on conversation list
+        setSelectedConversationId(null);
+      } else if (event.detail.conversationId) {
+        // Existing conversation
+        setSelectedConversationId(event.detail.conversationId);
+        console.log('📱 Timeline: Updated selectedConversationId to:', event.detail.conversationId);
+      }
+      
+      console.log('📱 Timeline: Switched to chat tab');
+    };
+
+    console.log('📱 Timeline: Setting up switchToChat event listener');
+    window.addEventListener('switchToChat', handleSwitchToChat);
+    
+    return () => {
+      console.log('📱 Timeline: Cleaning up switchToChat event listener');
+      window.removeEventListener('switchToChat', handleSwitchToChat);
+    };
+  }, []);
+
 
   useEffect(() => {
     const token = localStorage.getItem('accessToken');
@@ -220,7 +256,7 @@ export default function TimelinePage() {
                       <a className={activeTab === 'posts' ? 'active' : ''} href="#" onClick={e => { e.preventDefault(); setActiveTab('posts'); }}>Time Line</a>
                       <a className="" href={`/timeline/${userId}/photos`} title="" data-ripple="">Photos</a>
                       <a className="" href={`/timeline/${userId}/videos`} title="" data-ripple="">Videos</a>
-                      <a className="" href={`/timeline/${userId}/friends`} title="" data-ripple="">Friends</a>
+                      <a className={activeTab === 'friends' ? 'active' : ''} href="#" onClick={e => { e.preventDefault(); setActiveTab('friends'); }}>Friends</a>
                       <a className="" href={`/timeline/${userId}/groups`} title="" data-ripple="">Groups</a>
                       <a className="" href="#" title="" data-ripple="">more</a>
                       <a className={activeTab === 'chat' ? 'active' : ''} href="#" title="" data-ripple="" onClick={e => { e.preventDefault(); setActiveTab('chat'); }}>Chat</a>
@@ -376,222 +412,234 @@ export default function TimelinePage() {
 
                   {/* Center Content - Tabs */}
                   <div className="col-lg-6">
-                    <div className="loadMore">
-                      {/* Create Post Box */}
-                      <div className="central-meta item">
-                        <div className="new-postbox">
-                          <figure>
-                            <img src="/images/resources/admin2.jpg" alt="" />
-                          </figure>
-                          <div className="newpst-input">
-                            <form method="post">
-                              <textarea rows="2" placeholder="write something"></textarea>
-                              <div className="attachments">
-                                <ul>
-                                  <li>
-                                    <i className="fa fa-music"></i>
-                                    <label className="fileContainer">
-                                      <input type="file" />
-                                    </label>
-                                  </li>
-                                  <li>
-                                    <i className="fa fa-image"></i>
-                                    <label className="fileContainer">
-                                      <input type="file" />
-                                    </label>
-                                  </li>
-                                  <li>
-                                    <i className="fa fa-video-camera"></i>
-                                    <label className="fileContainer">
-                                      <input type="file" />
-                                    </label>
-                                  </li>
-                                  <li>
-                                    <i className="fa fa-camera"></i>
-                                    <label className="fileContainer">
-                                      <input type="file" />
-                                    </label>
-                                  </li>
-                                  <li>
-                                    <button type="submit">Publish</button>
-                                  </li>
-                                </ul>
-                              </div>
-                            </form>
-                          </div>
-                        </div>
-                      </div>
-                      {/* User Posts */}
-                      {isLoading ? (
-                        <div style={{ textAlign: 'center', padding: 20 }}>
-                          <div className={styles.spinner}>
-                            <div className={styles.bounce1}></div>
-                            <div className={styles.bounce2}></div>
-                            <div className={styles.bounce3}></div>
-                          </div>
-                          <p>Loading posts...</p>
-                        </div>
-                      ) : error ? (
-                        <div style={{ textAlign: 'center', padding: 20, color: 'red' }}>
-                          Error loading posts: {error.message}
-                        </div>
-                      ) : userPosts && userPosts.length > 0 ? (
-                        userPosts.map(post => (
-                          <div className="central-meta item" key={post.id}>
-                            <div className="user-post">
-                              <div className="friend-info">
-                                <figure>
-                                  <ProfileAvatar imageId={post.profileImageId} size={40} />
-                                </figure>
-                                <div className="friend-name">
-                                  <ins><a href={`/timeline/${userId}`} title="">{post.authorName || 'User'}</a></ins>
-                                  <span>published: {new Date(post.createdAt).toLocaleString()}</span>
+                    {activeTab === 'posts' && (
+                      <div className="loadMore">
+                        {/* Create Post Box */}
+                        <div className="central-meta item">
+                          <div className="new-postbox">
+                            <figure>
+                              <img src="/images/resources/admin2.jpg" alt="" />
+                            </figure>
+                            <div className="newpst-input">
+                              <form method="post">
+                                <textarea rows="2" placeholder="write something"></textarea>
+                                <div className="attachments">
+                                  <ul>
+                                    <li>
+                                      <i className="fa fa-music"></i>
+                                      <label className="fileContainer">
+                                        <input type="file" />
+                                      </label>
+                                    </li>
+                                    <li>
+                                      <i className="fa fa-image"></i>
+                                      <label className="fileContainer">
+                                        <input type="file" />
+                                      </label>
+                                    </li>
+                                    <li>
+                                      <i className="fa fa-video-camera"></i>
+                                      <label className="fileContainer">
+                                        <input type="file" />
+                                      </label>
+                                    </li>
+                                    <li>
+                                      <i className="fa fa-camera"></i>
+                                      <label className="fileContainer">
+                                        <input type="file" />
+                                      </label>
+                                    </li>
+                                    <li>
+                                      <button type="submit">Publish</button>
+                                    </li>
+                                  </ul>
                                 </div>
-                                <div className="post-meta">
-                                  {/* Render image if present */}
-                                  {post.images && post.images.length > 0 && post.images[0]?.id ? (
-                                    <FeedImage imageId={post.images[0].id} />
-                                  ) : null}
-                                  <div className="description">
-                                    <p>{post.content}</p>
+                              </form>
+                            </div>
+                          </div>
+                        </div>
+                        {/* User Posts */}
+                        {isLoading ? (
+                          <div style={{ textAlign: 'center', padding: 20 }}>
+                            <div className={styles.spinner}>
+                              <div className={styles.bounce1}></div>
+                              <div className={styles.bounce2}></div>
+                              <div className={styles.bounce3}></div>
+                            </div>
+                            <p>Loading posts...</p>
+                          </div>
+                        ) : error ? (
+                          <div style={{ textAlign: 'center', padding: 20, color: 'red' }}>
+                            Error loading posts: {error.message}
+                          </div>
+                        ) : userPosts && userPosts.length > 0 ? (
+                          userPosts.map(post => (
+                            <div className="central-meta item" key={post.id}>
+                              <div className="user-post">
+                                <div className="friend-info">
+                                  <figure>
+                                    <ProfileAvatar imageId={post.profileImageId} size={40} />
+                                  </figure>
+                                  <div className="friend-name">
+                                    <ins><a href={`/timeline/${userId}`} title="">{post.authorName || 'User'}</a></ins>
+                                    <span>published: {new Date(post.createdAt).toLocaleString()}</span>
                                   </div>
-                                  <div className="we-video-info">
-                                    <ul>
-                                      <li>
-                                        <span className="views" title="views">
-                                          <i className="fa fa-eye"></i>
-                                          <ins>1.2k</ins>
-                                        </span>
-                                      </li>
-                                      <li>
-                                        <span className="comment" title="Comments">
-                                          <i className="fa fa-comments-o"></i>
-                                          <ins>52</ins>
-                                        </span>
-                                      </li>
-                                      <li>
-                                        <span className="like" title="like">
-                                          <i className="ti-heart"></i>
-                                          <ins>{post.likeCounter || 0}</ins>
-                                        </span>
-                                      </li>
-                                      <li className="social-media">
-                                        <div className="menu">
-                                          <div className="btn trigger"><i className="fa fa-share-alt"></i></div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-html5"></i></a></div>
+                                  <div className="post-meta">
+                                    {/* Render image if present */}
+                                    {post.images && post.images.length > 0 && post.images[0]?.id ? (
+                                      <FeedImage imageId={post.images[0].id} />
+                                    ) : null}
+                                    <div className="description">
+                                      <p>{post.content}</p>
+                                    </div>
+                                    <div className="we-video-info">
+                                      <ul>
+                                        <li>
+                                          <span className="views" title="views">
+                                            <i className="fa fa-eye"></i>
+                                            <ins>1.2k</ins>
+                                          </span>
+                                        </li>
+                                        <li>
+                                          <span className="comment" title="Comments">
+                                            <i className="fa fa-comments-o"></i>
+                                            <ins>52</ins>
+                                          </span>
+                                        </li>
+                                        <li>
+                                          <span className="like" title="like">
+                                            <i className="ti-heart"></i>
+                                            <ins>{post.likeCounter || 0}</ins>
+                                          </span>
+                                        </li>
+                                        <li className="social-media">
+                                          <div className="menu">
+                                            <div className="btn trigger"><i className="fa fa-share-alt"></i></div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-html5"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-facebook"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-google-plus"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-twitter"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-css3"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-instagram"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-dribbble"></i></a></div>
+                                            </div>
+                                            <div className="rotater">
+                                              <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-pinterest"></i></a></div>
+                                            </div>
                                           </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-facebook"></i></a></div>
-                                          </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-google-plus"></i></a></div>
-                                          </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-twitter"></i></a></div>
-                                          </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-css3"></i></a></div>
-                                          </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-instagram"></i></a></div>
-                                          </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-dribbble"></i></a></div>
-                                          </div>
-                                          <div className="rotater">
-                                            <div className="btn btn-icon"><a href="#" title=""><i className="fa fa-pinterest"></i></a></div>
-                                          </div>
-                                        </div>
-                                      </li>
-                                    </ul>
+                                        </li>
+                                      </ul>
+                                    </div>
                                   </div>
                                 </div>
                               </div>
                             </div>
+                          ))
+                        ) : (
+                          <div style={{ textAlign: 'center', padding: 20 }}>
+                            <p>No posts found for this user.</p>
                           </div>
-                        ))
-                      ) : (
-                        <div style={{ textAlign: 'center', padding: 20 }}>
-                          <p>No posts found for this user.</p>
-                        </div>
-                      )}
-                    </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {activeTab === 'friends' && (
+                      <Friends />
+                    )}
                   </div>
 
                   {/* Right Sidebar */}
                   <div className="col-lg-3">
                     <aside className="sidebar static">
-                      <div className="widget">
-                        <div className="banner medium-opacity bluesh">
-                          <div style={{ backgroundImage: 'url(/images/resources/baner-widgetbg.jpg)' }} className="bg-image"></div>
-                          <div className="baner-top">
-                            <span><img src="/images/book-icon.png" alt="" /></span>
-                            <i className="fa fa-ellipsis-h"></i>
+                      {activeTab === 'friends' ? (
+                        <FriendsSidebar />
+                      ) : (
+                        <>
+                          <div className="widget">
+                            <div className="banner medium-opacity bluesh">
+                              <div style={{ backgroundImage: 'url(/images/resources/baner-widgetbg.jpg)' }} className="bg-image"></div>
+                              <div className="baner-top">
+                                <span><img src="/images/book-icon.png" alt="" /></span>
+                                <i className="fa fa-ellipsis-h"></i>
+                              </div>
+                              <div className="banermeta">
+                                <p>create your own favourit page.</p>
+                                <span>like them all</span>
+                                <a href="#" title="" data-ripple="">start now!</a>
+                              </div>
+                            </div>
                           </div>
-                          <div className="banermeta">
-                            <p>create your own favourit page.</p>
-                            <span>like them all</span>
-                            <a href="#" title="" data-ripple="">start now!</a>
+                          <div className="widget friend-list stick-widget">
+                            <h4 className="widget-title">Friends</h4>
+                            <div id="searchDir"></div>
+                            <ul id="people-list" className="friendz-list">
+                              <li>
+                                <figure>
+                                  <img src="/images/resources/friend-avatar.jpg" alt="" />
+                                  <span className="status f-online"></span>
+                                </figure>
+                                <div className="friendz-meta">
+                                  <a href="/timeline/user1">bucky barnes</a>
+                                  <i>bucky@email.com</i>
+                                </div>
+                              </li>
+                              <li>
+                                <figure>
+                                  <img src="/images/resources/friend-avatar2.jpg" alt="" />
+                                  <span className="status f-away"></span>
+                                </figure>
+                                <div className="friendz-meta">
+                                  <a href="/timeline/user2">Sarah Loren</a>
+                                  <i>sarah@email.com</i>
+                                </div>
+                              </li>
+                              <li>
+                                <figure>
+                                  <img src="/images/resources/friend-avatar3.jpg" alt="" />
+                                  <span className="status f-off"></span>
+                                </figure>
+                                <div className="friendz-meta">
+                                  <a href="/timeline/user3">jason borne</a>
+                                  <i>jason@email.com</i>
+                                </div>
+                              </li>
+                              <li>
+                                <figure>
+                                  <img src="/images/resources/friend-avatar4.jpg" alt="" />
+                                  <span className="status f-off"></span>
+                                </figure>
+                                <div className="friendz-meta">
+                                  <a href="/timeline/user4">Cameron diaz</a>
+                                  <i>cameron@email.com</i>
+                                </div>
+                              </li>
+                              <li>
+                                <figure>
+                                  <img src="/images/resources/friend-avatar5.jpg" alt="" />
+                                  <span className="status f-online"></span>
+                                </figure>
+                                <div className="friendz-meta">
+                                  <a href="/timeline/user5">daniel warber</a>
+                                  <i>daniel@email.com</i>
+                                </div>
+                              </li>
+                            </ul>
                           </div>
-                        </div>
-                      </div>
-                      <div className="widget friend-list stick-widget">
-                        <h4 className="widget-title">Friends</h4>
-                        <div id="searchDir"></div>
-                        <ul id="people-list" className="friendz-list">
-                          <li>
-                            <figure>
-                              <img src="/images/resources/friend-avatar.jpg" alt="" />
-                              <span className="status f-online"></span>
-                            </figure>
-                            <div className="friendz-meta">
-                              <a href="/timeline/user1">bucky barnes</a>
-                              <i>bucky@email.com</i>
-                            </div>
-                          </li>
-                          <li>
-                            <figure>
-                              <img src="/images/resources/friend-avatar2.jpg" alt="" />
-                              <span className="status f-away"></span>
-                            </figure>
-                            <div className="friendz-meta">
-                              <a href="/timeline/user2">Sarah Loren</a>
-                              <i>sarah@email.com</i>
-                            </div>
-                          </li>
-                          <li>
-                            <figure>
-                              <img src="/images/resources/friend-avatar3.jpg" alt="" />
-                              <span className="status f-off"></span>
-                            </figure>
-                            <div className="friendz-meta">
-                              <a href="/timeline/user3">jason borne</a>
-                              <i>jason@email.com</i>
-                            </div>
-                          </li>
-                          <li>
-                            <figure>
-                              <img src="/images/resources/friend-avatar4.jpg" alt="" />
-                              <span className="status f-off"></span>
-                            </figure>
-                            <div className="friendz-meta">
-                              <a href="/timeline/user4">Cameron diaz</a>
-                              <i>cameron@email.com</i>
-                            </div>
-                          </li>
-                          <li>
-                            <figure>
-                              <img src="/images/resources/friend-avatar5.jpg" alt="" />
-                              <span className="status f-online"></span>
-                            </figure>
-                            <div className="friendz-meta">
-                              <a href="/timeline/user5">daniel warber</a>
-                              <i>daniel@email.com</i>
-                            </div>
-                          </li>
-                        </ul>
-                      </div>
+                        </>
+                      )}
                     </aside>
                   </div>
                 </div>
@@ -604,7 +652,7 @@ export default function TimelinePage() {
       {/* Render floating ChatBox if Chat tab is active */}
       {activeTab === 'chat' && (
         <div style={{ position: 'fixed', bottom: 32, right: 32, zIndex: 1000 }}>
-          <ChatBox />
+          <ChatBox selectedConversationId={selectedConversationId} />
         </div>
       )}
     </ProtectedRoutes>

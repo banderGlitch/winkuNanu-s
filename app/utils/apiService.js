@@ -101,6 +101,35 @@ export function getUserIdFromToken() {
   }
 }
 
+// Fetch all users for friends/suggestions
+export const fetchAllUsers = async () => {
+  const res = await api.get('/api/v1/users/all');
+  return res.data;
+};
+
+// Create a new conversation with a user
+export const createConversation = async (receiverId) => {
+  console.log('🌐 API: Creating conversation with receiverId:', receiverId);
+  try {
+    console.log('🌐 API: Making POST request to /api/v1/chat/conversations');
+    console.log('🌐 API: Request payload:', { receiverId });
+    
+    const res = await api.post('/api/v1/chat/conversations', { receiverId });
+    
+    console.log('🌐 API: Full response object:', res);
+    console.log('🌐 API: Response status:', res.status);
+    console.log('🌐 API: Response headers:', res.headers);
+    console.log('🌐 API: Response data:', res.data);
+    
+    return res.data;
+  } catch (error) {
+    console.error('❌ API: Error in createConversation:', error);
+    console.error('❌ API: Error response:', error.response);
+    console.error('❌ API: Error message:', error.message);
+    throw error;
+  }
+};
+
 // Fetch connected WebSocket users
 export const fetchConnectedUsers = async () => {
   const res = await api.get('/api/v1/chat/ws/users');

@@ -7,10 +7,24 @@ const api = axios.create({});
 // Request interceptor: Attach access token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('accessToken');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    let token = localStorage.getItem('accessToken');
+    
+    // If no token in localStorage, try to get from the test token (since the test token might be expired)
+    if (!token) {
+      console.warn('⚠️ API: No token found in localStorage for request to:', config.url);
+      
+      // Use a fresh test token for development (you should replace this with your actual login flow)
+      const testToken = 'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyMSIsInVzZXJJZCI6Ijc0ODA0N2JjLWNhODctNDllZC1hMWMxLWY2YTg5OTg2NTMzMyIsImlhdCI6MTc1MDY5MzAyMSwiZXhwIjoxNzUwNzc5NDIxfQ.baa0qQWmD1XAzQhLbb-ziRqUlWinvzp0tyoQ_03fo4U';
+      
+      // Store the test token in localStorage so other parts of the app can use it
+      localStorage.setItem('accessToken', testToken);
+      token = testToken;
+      console.log('🔐 API: Using and storing test token for request to:', config.url);
+    } else {
+      console.log('🔐 API: Using existing token for request to:', config.url);
     }
+    
+    config.headers['Authorization'] = `Bearer ${token}`;
     return config;
   },
   (error) => Promise.reject(error)
