@@ -298,6 +298,9 @@ export default function Friends() {
     console.log('💬 Friends: Storing pending chat user:', pendingChatUser);
     localStorage.setItem('pendingChatUser', JSON.stringify(pendingChatUser));
     
+    // Notify ChatBox about new pending chat user
+    window.dispatchEvent(new CustomEvent('newPendingChat'));
+    
     // Switch to chat tab
     console.log('💬 Friends: Switching to chat tab');
     window.dispatchEvent(new CustomEvent('switchToChat', {

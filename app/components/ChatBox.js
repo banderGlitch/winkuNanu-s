@@ -17,6 +17,7 @@ export default function ChatBox({ selectedConversationId }) {
   const [isConnected, setIsConnected] = useState(false);
   const [showApprovalPopup, setShowApprovalPopup] = useState(false);
   const [pendingMessage, setPendingMessage] = useState(null);
+  const [pendingChatTrigger, setPendingChatTrigger] = useState(0); // Force re-render trigger
 
   // Handle approval/decline of introductory message
   const handleApproveMessage = async () => {
@@ -25,9 +26,19 @@ export default function ChatBox({ selectedConversationId }) {
     try {
       console.log('✅ ChatBox: Approving introductory message for conversation:', pendingMessage.conversationId);
       
-      const response = await acceptIntroductoryMessage(pendingMessage.conversationId);
-      if (response.success) {
-        console.log('✅ Message approved successfully');
+      // Use WebSocket to send approval (like chatTest.html)
+      if (isConnected && stompClientRef.current) {
+        const approvalPayload = {
+          conversationId: pendingMessage.conversationId
+        };
+        
+        console.log('✅ ChatBox: Sending approval via WebSocket:', approvalPayload);
+        stompClientRef.current.publish({
+          destination: '/app/chat.accept',
+          body: JSON.stringify(approvalPayload)
+        });
+        
+        console.log('✅ Message approved via WebSocket');
         setShowApprovalPopup(false);
         setPendingMessage(null);
         
@@ -45,8 +56,18 @@ export default function ChatBox({ selectedConversationId }) {
         // Show success message
         alert('Message approved! You can now continue chatting.');
       } else {
-        console.error('❌ Failed to approve message:', response);
-        alert('Failed to approve message. Please try again.');
+        // Fallback to REST API if WebSocket not available
+        const response = await acceptIntroductoryMessage(pendingMessage.conversationId);
+        if (response.success) {
+          console.log('✅ Message approved successfully via REST API');
+          setShowApprovalPopup(false);
+          setPendingMessage(null);
+          refetchConversations();
+          alert('Message approved! You can now continue chatting.');
+        } else {
+          console.error('❌ Failed to approve message:', response);
+          alert('Failed to approve message. Please try again.');
+        }
       }
     } catch (error) {
       console.error('❌ Error approving message:', error);
@@ -125,7 +146,13 @@ export default function ChatBox({ selectedConversationId }) {
 
   // Merge conversations with pending chat user
   const allConversations = useMemo(() => {
+    console.log('💬 ChatBox: useMemo - Calculating allConversations');
+    console.log('💬 ChatBox: conversations:', conversations);
+    console.log('💬 ChatBox: currentUser:', currentUser);
+    
     const pendingChatUser = localStorage.getItem('pendingChatUser');
+    console.log('💬 ChatBox: pendingChatUser from localStorage:', pendingChatUser);
+    
     if (pendingChatUser) {
       try {
         const userData = JSON.parse(pendingChatUser);
@@ -135,6 +162,8 @@ export default function ChatBox({ selectedConversationId }) {
         const existingConversation = conversations.find(conv => 
           conv.participantIds && conv.participantIds.includes(userData.userId)
         );
+        
+        console.log('💬 ChatBox: Existing conversation found:', existingConversation);
         
         if (!existingConversation) {
           // Add as a new "conversation" in the list
@@ -148,15 +177,22 @@ export default function ChatBox({ selectedConversationId }) {
           };
           
           console.log('💬 ChatBox: Adding pending conversation:', pendingConversation);
-          return [pendingConversation, ...conversations];
+          const result = [pendingConversation, ...conversations];
+          console.log('💬 ChatBox: Final allConversations:', result);
+          return result;
+        } else {
+          console.log('💬 ChatBox: User already exists in conversations, not adding pending');
         }
       } catch (error) {
         console.error('❌ ChatBox: Error parsing pending chat user:', error);
       }
+    } else {
+      console.log('💬 ChatBox: No pending chat user found');
     }
     
+    console.log('💬 ChatBox: Returning original conversations:', conversations);
     return conversations;
-  }, [conversations, currentUser]);
+  }, [conversations, currentUser, pendingChatTrigger]);
 
   // Handle new conversation from Friends component
   useEffect(() => {
@@ -200,6 +236,20 @@ export default function ChatBox({ selectedConversationId }) {
       setSelectedConversation(null);
     }
   }, [selectedConversationId, conversations, currentUser]);
+
+  // Listen for new pending chat users from Friends component
+  useEffect(() => {
+    const handleNewPendingChat = () => {
+      console.log('💬 ChatBox: Received new pending chat event, triggering re-render');
+      setPendingChatTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('newPendingChat', handleNewPendingChat);
+    
+    return () => {
+      window.removeEventListener('newPendingChat', handleNewPendingChat);
+    };
+  }, []);
 
   // React Query: Fetch messages for selected conversation
   const { 
@@ -642,7 +692,7 @@ export default function ChatBox({ selectedConversationId }) {
       return;
     }
     
-    // Use @stomp/stompjs Client  
+    // Use @stomp/stompjs Client
     const client = new Client({
       webSocketFactory: () => {
         console.log('🔌 WebSocket: Creating SockJS connection to:', `${WS_URL}?token=${token ? token.substring(0, 20) + '...' : 'NO_TOKEN'}`);
@@ -694,26 +744,45 @@ export default function ChatBox({ selectedConversationId }) {
            console.log('👁 WebSocket: Seen notification:', msg.body);
       });
 
-      // Subscribe to conversation accepted
+                       // Subscribe to introductory message requests (when someone sends first message)
+        client.subscribe('/user/queue/conversation-request', (msg) => {
+          console.log('🚨 APPROVAL DEBUG: Introductory message request received:', msg.body);
+          console.log('🚨 APPROVAL DEBUG: Current user ID:', currentUser?.userId);
+          console.log('🚨 APPROVAL DEBUG: showApprovalPopup before:', showApprovalPopup);
+          try {
+            const data = JSON.parse(msg.body);
+            console.log('🚨 APPROVAL DEBUG: Parsed intro request data:', data);
+            console.log('🚨 APPROVAL DEBUG: Sender ID:', data.senderId);
+            console.log('🚨 APPROVAL DEBUG: Receiver ID:', data.receiverId);
+            console.log('🚨 APPROVAL DEBUG: Should show popup?', data.receiverId === currentUser?.userId);
+            
+            // Show approval popup for introductory message
+            setPendingMessage({
+              conversationId: data.conversationId,
+              senderName: data.senderName || 'Someone',
+              message: data.message || 'wants to start a conversation'
+            });
+            setShowApprovalPopup(true);
+            console.log('🚨 APPROVAL DEBUG: Showing approval popup for intro message');
+            console.log('🚨 APPROVAL DEBUG: pendingMessage set to:', {
+              conversationId: data.conversationId,
+              senderName: data.senderName || 'Someone',
+              message: data.message || 'wants to start a conversation'
+            });
+          } catch (error) {
+            console.error('❌ WebSocket: Error parsing intro request:', error);
+          }
+        });
+
+         // Subscribe to conversation accepted confirmations (after approval)
       client.subscribe('/user/queue/conversation-accepted', (msg) => {
-           console.log('✅ WebSocket: Conversation Accepted message received:', msg.body);
+           console.log('✅ WebSocket: Conversation accepted confirmation:', msg.body);
            try {
              const data = JSON.parse(msg.body);
-             console.log('✅ WebSocket: Parsed conversation accepted data:', data);
-             console.log('✅ WebSocket: Current selectedConversation:', selectedConversation);
-             console.log('✅ WebSocket: Comparing conversationId:', data.conversationId, 'with:', selectedConversation?.conversationId);
+             console.log('✅ WebSocket: Conversation was approved:', data);
              
-             // Show approval popup for the receiver
-             if (data.conversationId === selectedConversation?.conversationId) {
-               console.log('✅ WebSocket: Conversation IDs match, showing approval popup');
-               setPendingMessage({
-                 conversationId: data.conversationId,
-                 acceptedBy: data.acceptedBy
-               });
-               setShowApprovalPopup(true);
-             } else {
-               console.log('⚠️ WebSocket: Conversation IDs do not match, not showing popup');
-             }
+             // Refresh conversations to show the new accepted conversation
+             refetchConversations();
            } catch (error) {
              console.error('❌ WebSocket: Error parsing conversation accepted:', error);
            }
@@ -837,6 +906,10 @@ export default function ChatBox({ selectedConversationId }) {
     
     console.log('📤 ChatBox: Sending message payload (like chatTest.html):', payload);
     console.log('📤 ChatBox: selectedConversation:', selectedConversation);
+    console.log('🚨 SEND DEBUG: Is this a first message?', selectedConversation.isPendingChat);
+    console.log('🚨 SEND DEBUG: Current user:', currentUser?.userId);
+    console.log('🚨 SEND DEBUG: Receiver ID:', receiverId);
+    console.log('🚨 SEND DEBUG: Message content:', message.trim());
     
     await sendMessageViaWebSocket(payload);
   };
@@ -847,8 +920,32 @@ export default function ChatBox({ selectedConversationId }) {
     try {
       if (isConnected && stompClientRef.current) {
         // Use WebSocket like in chatTest.html
+        console.log('🚨 WEBSOCKET DEBUG: Publishing to /app/chat.send with payload:', JSON.stringify(payload));
+        console.log('🚨 WEBSOCKET DEBUG: Destination: /app/chat.send');
         stompClientRef.current.publish({ destination: '/app/chat.send', body: JSON.stringify(payload) });
         console.log('✅ Message sent via WebSocket');
+        
+        // TEMPORARY: Simulate conversation-request for testing (since backend isn't sending it)
+        if (selectedConversation.isPendingChat) {
+          console.log('🚨 TEMP SIMULATION: Simulating conversation-request for testing');
+          setTimeout(() => {
+            const simulatedRequest = {
+              conversationId: `test-conv-${Date.now()}`,
+              senderName: currentUser?.username || 'Test Sender',
+              senderId: currentUser?.userId,
+              receiverId: payload.receiverId,
+              message: payload.content
+            };
+            console.log('🚨 TEMP SIMULATION: Triggering conversation-request:', simulatedRequest);
+            // Trigger the same logic as real WebSocket
+            setPendingMessage({
+              conversationId: simulatedRequest.conversationId,
+              senderName: simulatedRequest.senderName,
+              message: simulatedRequest.message
+            });
+            setShowApprovalPopup(true);
+          }, 1000); // Simulate network delay
+        }
         
         // Add message locally immediately
         const localMessage = {
@@ -1431,7 +1528,7 @@ export default function ChatBox({ selectedConversationId }) {
             flexDirection: 'column',
             gap: '5px'
           }}>
-            <button
+            {/* <button
               onClick={() => {
                 console.log('🧪 Debug: Testing conversation creation flow');
                 console.log('🧪 Debug: selectedConversationId:', selectedConversationId);
@@ -1567,8 +1664,61 @@ export default function ChatBox({ selectedConversationId }) {
             >
               {isConnected ? 'Connected ✅' : 'Reconnect ❌'}
             </button>
+            <button
+              onClick={() => {
+                console.log('💬 Debug: Testing approval popup');
+                setPendingMessage({
+                  conversationId: 'test-conversation-123',
+                  senderName: 'Test User',
+                  message: 'Hello! This is a test introductory message.'
+                });
+                setShowApprovalPopup(true);
+              }}
+              style={{
+                padding: '8px 12px',
+                background: '#ff9800',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              Test Approval
+            </button>
+            <button
+              onClick={() => {
+                console.log('💬 Debug: Adding test pending chat user');
+                const testPendingUser = {
+                  userId: 'test-user-123',
+                  userName: 'Debug Test User',
+                  isPendingChat: true
+                };
+                localStorage.setItem('pendingChatUser', JSON.stringify(testPendingUser));
+                console.log('💬 Debug: Test user stored in localStorage');
+                
+                // Trigger the pending chat event
+                window.dispatchEvent(new CustomEvent('newPendingChat'));
+                console.log('💬 Debug: newPendingChat event dispatched');
+              }}
+              style={{
+                padding: '8px 12px',
+                background: '#9c27b0',
+                color: 'white',
+                border: 'none',
+                borderRadius: '4px',
+                fontSize: '12px',
+                cursor: 'pointer'
+              }}
+            >
+              Add Test User
+            </button> */}
           </div>
         )}
+
+        {/* Debug approval popup state */}
+        {console.log('🚨 RENDER DEBUG: showApprovalPopup:', showApprovalPopup)}
+        {console.log('🚨 RENDER DEBUG: pendingMessage:', pendingMessage)}
 
         {/* Approval Popup for Introductory Messages */}
         {showApprovalPopup && pendingMessage && (
@@ -1593,17 +1743,35 @@ export default function ChatBox({ selectedConversationId }) {
               textAlign: 'center',
               boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)'
             }}>
-              <div style={{ fontSize: '48px', marginBottom: '20px' }}>💬</div>
+                            <div style={{ fontSize: '48px', marginBottom: '20px' }}>💬</div>
               <h3 style={{ marginBottom: '15px', color: '#333' }}>
-                New Message Request
+                Introductory Message Request
               </h3>
               <p style={{ 
-                marginBottom: '25px', 
+                marginBottom: '15px', 
                 color: '#666',
                 lineHeight: '1.5'
               }}>
-                Someone wants to start a conversation with you. 
-                You can approve to continue chatting or decline to ignore.
+                <strong>{pendingMessage.senderName || 'Someone'}</strong> wants to start a conversation with you.
+              </p>
+              {pendingMessage.message && (
+                <div style={{
+                  background: '#f8f9fa',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  marginBottom: '20px',
+                  fontStyle: 'italic',
+                  color: '#555'
+                }}>
+                  "{pendingMessage.message}"
+                </div>
+              )}
+              <p style={{ 
+                marginBottom: '25px', 
+                color: '#666',
+                fontSize: '14px'
+              }}>
+                You can approve to continue chatting or decline to ignore this request.
               </p>
               
               <div style={{
