@@ -106,7 +106,7 @@ export default function ChatBox({ selectedConversationId }) {
   const queryClient = useQueryClient();
   
   // WebSocket URLs
-  const WS_URL = 'http://localhost:8080/ws';
+  const WS_URL = 'http://host.docker.internal:8080/ws';
 
    // Get other participant in conversation - Define early to avoid initialization error
    const getOtherParticipant = (conversation) => {

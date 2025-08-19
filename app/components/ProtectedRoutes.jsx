@@ -14,6 +14,8 @@ export default function ProtectedRoutes({ children }) {
         }
     }, [isAuthenticated, router]);
 
+
+
     if (!isAuthenticated) return null; // or a loading spinner
 
     return children;

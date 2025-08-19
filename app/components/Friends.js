@@ -1,131 +1,21 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { fetchAllUsers, createConversation } from '../utils/apiService';
+import { 
+  fetchAllUsers, 
+  createConversation, 
+  sendFriendRequest, 
+  respondToFollowRequest, 
+  getPendingFollowRequests,
+  getSentFollowRequests,
+  getAllFriends
+} from '../utils/apiService';
 
-// Mock data for friends - you can replace this with real API calls
-const mockFriends = [
-  {
-    id: 1,
-    name: 'Jhon Kates',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/friend-avatar9.jpg',
-    isFriend: true
-  },
-  {
-    id: 2,
-    name: 'Sophia Gate',
-    profession: 'Tv Actresses',
-    avatar: '/images/resources/nearly1.jpg',
-    isFriend: true
-  },
-  {
-    id: 3,
-    name: 'Sara Grey',
-    profession: 'Work at IBM',
-    avatar: '/images/resources/nearly2.jpg',
-    isFriend: true
-  },
-  {
-    id: 4,
-    name: 'Sexy Cat',
-    profession: 'Student',
-    avatar: '/images/resources/nearly3.jpg',
-    isFriend: true
-  },
-  {
-    id: 5,
-    name: 'Sara Grey',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly4.jpg',
-    isFriend: true
-  },
-  {
-    id: 6,
-    name: 'Amy Watson',
-    profession: 'Study in university',
-    avatar: '/images/resources/nearly5.jpg',
-    isFriend: true
-  },
-  {
-    id: 7,
-    name: 'Caty Lasbo',
-    profession: 'Work as dancers',
-    avatar: '/images/resources/nearly6.jpg',
-    isFriend: true
-  },
-  {
-    id: 8,
-    name: 'Ema Watson',
-    profession: 'Personal business',
-    avatar: '/images/resources/nearly2.jpg',
-    isFriend: true
-  }
-];
-
-const mockFriendRequests = [
-  {
-    id: 1,
-    name: 'Amy Watson',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly5.jpg',
-    isFriend: false
-  },
-  {
-    id: 2,
-    name: 'Sophia Gate',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly1.jpg',
-    isFriend: false
-  },
-  {
-    id: 3,
-    name: 'Caty Lasbo',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly6.jpg',
-    isFriend: false
-  },
-  {
-    id: 4,
-    name: 'Jhon Kates',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/friend-avatar9.jpg',
-    isFriend: false
-  },
-  {
-    id: 5,
-    name: 'Sara Grey',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly2.jpg',
-    isFriend: false
-  },
-  {
-    id: 6,
-    name: 'Sara Grey',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly4.jpg',
-    isFriend: false
-  },
-  {
-    id: 7,
-    name: 'Sexy Cat',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/nearly3.jpg',
-    isFriend: false
-  },
-  {
-    id: 8,
-    name: 'Jhon Kates',
-    profession: 'Ftv Model',
-    avatar: '/images/resources/friend-avatar9.jpg',
-    isFriend: false
-  }
-];
-
+// Mock data for followers - you can replace this with real API calls
 const mockFollowers = [
   {
     id: 1,
     name: 'Kelly Bill',
-    avatar: '/images/resources/friend-avatar2.jpg'
+    avatar: '/images/resources/friend-avatar9.jpg'
   },
   {
     id: 2,
@@ -149,61 +39,54 @@ const mockFollowers = [
   }
 ];
 
-const mockSuggestions = [
-  {
-    id: 1,
-    name: 'Emma Wilson',
-    profession: 'Software Engineer',
-    avatar: '/images/resources/friend-avatar7.jpg',
-    mutualFriends: 3
-  },
-  {
-    id: 2,
-    name: 'Michael Brown',
-    profession: 'Graphic Designer',
-    avatar: '/images/resources/friend-avatar5.jpg',
-    mutualFriends: 5
-  },
-  {
-    id: 3,
-    name: 'Lisa Anderson',
-    profession: 'Marketing Manager',
-    avatar: '/images/resources/friend-avatar1.jpg',
-    mutualFriends: 2
-  },
-  {
-    id: 4,
-    name: 'David Clark',
-    profession: 'Photographer',
-    avatar: '/images/resources/friend-avatar9.jpg',
-    mutualFriends: 4
-  },
-  {
-    id: 5,
-    name: 'Sarah Johnson',
-    profession: 'Teacher',
-    avatar: '/images/resources/friend-avatar2.jpg',
-    mutualFriends: 1
-  },
-  {
-    id: 6,
-    name: 'Robert Taylor',
-    profession: 'Chef',
-    avatar: '/images/resources/friend-avatar3.jpg',
-    mutualFriends: 3
-  }
-];
-
 export default function Friends() {
   const [activeTab, setActiveTab] = useState('friends');
-  const [friends, setFriends] = useState(mockFriends);
-  const [friendRequests, setFriendRequests] = useState(mockFriendRequests);
-  const [suggestions, setSuggestions] = useState(mockSuggestions);
+  const [friends, setFriends] = useState([]);
+  const [friendRequests, setFriendRequests] = useState([]);
+  const [suggestions, setSuggestions] = useState([]);
   const [followers] = useState(mockFollowers);
   const [allUsers, setAllUsers] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [requestsLoading, setRequestsLoading] = useState(false);
+  const [friendsLoading, setFriendsLoading] = useState(false);
 
-  // Fetch all users from API
+  // Fetch all friends from API
+  useEffect(() => {
+    const loadFriends = async () => {
+      setFriendsLoading(true);
+      try {
+        console.log('👥 Friends: Starting to fetch all friends');
+        const response = await getAllFriends();
+        console.log('👥 Friends: getAllFriends response:', response);
+        
+        if (response.success && response.data) {
+          console.log('👥 Friends: Raw friends data:', response.data);
+          
+          const transformedFriends = response.data.map(friend => ({
+            id: friend.userId,
+            name: friend.userName || 'Unknown User',
+            profession: 'Friend',
+            avatar: friend.imageId ? `/api/v1/images/view/${friend.imageId}` : '/images/resources/friend-avatar9.jpg',
+            isFriend: true
+          }));
+          
+          console.log('👥 Friends: Transformed friends:', transformedFriends);
+          setFriends(transformedFriends);
+        } else {
+          console.error('❌ Friends: Failed to fetch friends:', response);
+          setFriends([]);
+        }
+      } catch (error) {
+        console.error('❌ Friends: Error fetching friends:', error);
+        setFriends([]);
+      } finally {
+        setFriendsLoading(false);
+      }
+    };
+    loadFriends();
+  }, []);
+
+  // Fetch all users from API for suggestions
   useEffect(() => {
     const loadUsers = async () => {
       setLoading(true);
@@ -242,6 +125,44 @@ export default function Friends() {
     loadUsers();
   }, []);
 
+  // Fetch pending follow requests
+  useEffect(() => {
+    const loadFriendRequests = async () => {
+      setRequestsLoading(true);
+      try {
+        console.log('👥 Friends: Starting to fetch pending follow requests');
+        const response = await getPendingFollowRequests();
+        console.log('👥 Friends: Pending follow requests response:', response);
+        
+        if (response.success && response.data) {
+          const transformedRequests = response.data.map(request => ({
+            id: request.requesterId, // Use requesterId as the main ID
+            name: request.fullName || 'Unknown User', // Use fullName from API response
+            profession: 'User',
+            avatar: '/images/resources/friend-avatar9.jpg',
+            isFriend: false,
+            requestId: request.id, // Store the actual request ID for accept/reject
+            requesterId: request.requesterId,
+            requestedAt: request.requestedAt
+          }));
+          
+          console.log('👥 Friends: Transformed friend requests:', transformedRequests);
+          setFriendRequests(transformedRequests);
+        } else {
+          console.error('❌ Friends: Failed to fetch friend requests:', response);
+          setFriendRequests([]);
+        }
+      } catch (error) {
+        console.error('❌ Friends: Error fetching friend requests:', error);
+        // If API fails, use empty array
+        setFriendRequests([]);
+      } finally {
+        setRequestsLoading(false);
+      }
+    };
+    loadFriendRequests();
+  }, []);
+
   const handleUnfriend = (friendId) => {
     setFriends(friends.filter(friend => friend.id !== friendId));
   };
@@ -255,19 +176,68 @@ export default function Friends() {
     setFriendRequests(friendRequests.filter(request => request.id !== requestId));
   };
 
-  const handleConfirmRequest = (requestId) => {
-    const request = friendRequests.find(req => req.id === requestId);
-    if (request) {
-      setFriends([...friends, { ...request, isFriend: true }]);
-      setFriendRequests(friendRequests.filter(req => req.id !== requestId));
+  const handleConfirmRequest = async (requestId) => {
+    try {
+      console.log('✅ Friends: Accepting follow request:', requestId);
+      const response = await respondToFollowRequest(requestId, 'ACCEPT');
+      
+      if (response.success) {
+        console.log('✅ Friends: Follow request accepted successfully');
+        
+        // Find the request and add to friends
+        const request = friendRequests.find(req => req.requestId === requestId);
+        if (request) {
+          setFriends([...friends, { ...request, isFriend: true }]);
+          setFriendRequests(friendRequests.filter(req => req.requestId !== requestId));
+        }
+      } else {
+        console.error('❌ Friends: Failed to accept follow request:', response);
+        alert('Failed to accept request. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Friends: Error accepting follow request:', error);
+      alert('Error accepting request. Please try again.');
     }
   };
 
-  const handleAddSuggestion = (suggestionId) => {
-    const suggestion = suggestions.find(sug => sug.id === suggestionId);
-    if (suggestion) {
-      setFriends([...friends, { ...suggestion, isFriend: true }]);
-      setSuggestions(suggestions.filter(sug => sug.id !== suggestionId));
+  const handleRejectRequest = async (requestId) => {
+    try {
+      console.log('❌ Friends: Rejecting follow request:', requestId);
+      const response = await respondToFollowRequest(requestId, 'REJECT');
+      
+      if (response.success) {
+        console.log('✅ Friends: Follow request rejected successfully');
+        setFriendRequests(friendRequests.filter(req => req.requestId !== requestId));
+      } else {
+        console.error('❌ Friends: Failed to reject follow request:', response);
+        alert('Failed to reject request. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Friends: Error rejecting follow request:', error);
+      alert('Error rejecting request. Please try again.');
+    }
+  };
+
+  const handleAddSuggestion = async (suggestionId) => {
+    try {
+      console.log('👥 Friends: Sending follow request to user:', suggestionId);
+      const response = await sendFriendRequest(suggestionId);
+      
+      if (response.success) {
+        console.log('✅ Friends: Follow request sent successfully');
+        
+        // Remove from suggestions
+        setSuggestions(suggestions.filter(sug => sug.id !== suggestionId));
+        
+        // Show success message
+        alert('Friend request sent successfully!');
+      } else {
+        console.error('❌ Friends: Failed to send follow request:', response);
+        alert('Failed to send request. Please try again.');
+      }
+    } catch (error) {
+      console.error('❌ Friends: Error sending follow request:', error);
+        alert('Error sending request. Please try again.');
     }
   };
 
@@ -337,10 +307,10 @@ export default function Friends() {
                 data-ripple=""
                 onClick={(e) => {
                   e.preventDefault();
-                  handleDeleteRequest(friend.id);
+                  handleRejectRequest(friend.requestId);
                 }}
               >
-                Delete Request
+                Reject
               </a>
               <a 
                 href="#" 
@@ -349,10 +319,10 @@ export default function Friends() {
                 data-ripple=""
                 onClick={(e) => {
                   e.preventDefault();
-                  handleConfirmRequest(friend.id);
+                  handleConfirmRequest(friend.requestId);
                 }}
               >
-                Confirm
+                Accept
               </a>
             </>
           ) : (
@@ -503,54 +473,100 @@ export default function Friends() {
         {/* Tab panes */}
         <div className="tab-content">
           <div className={`tab-pane ${activeTab === 'friends' ? 'active fade show' : 'fade'}`} id="friends">
-            <ul className="nearby-contct">
-              {friends.map(friend => (
-                <FriendCard key={friend.id} friend={friend} />
-              ))}
-            </ul>
-            <div className="lodmore">
-              <button className="btn-view btn-load-more">Load More</button>
-            </div>
+            {friendsLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <div style={{ 
+                  display: 'inline-block',
+                  width: '20px',
+                  height: '20px',
+                  border: '3px solid #f3f3f3',
+                  borderTop: '3px solid #3498db',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                <p style={{ marginTop: '10px', color: '#666' }}>Loading friends...</p>
+              </div>
+            ) : friends.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <p>No friends yet</p>
+              </div>
+            ) : (
+              <>
+                <ul className="nearby-contct">
+                  {friends.map(friend => (
+                    <FriendCard key={friend.id} friend={friend} />
+                  ))}
+                </ul>
+                <div className="lodmore">
+                  <button className="btn-view btn-load-more">Load More</button>
+                </div>
+              </>
+            )}
           </div>
           
           <div className={`tab-pane ${activeTab === 'requests' ? 'active fade show' : 'fade'}`} id="requests">
-            <ul className="nearby-contct">
-              {friendRequests.map(request => (
-                <FriendCard key={request.id} friend={request} isRequest={true} />
-              ))}
-            </ul>
-            <div className="lodmore">
-              <button className="btn-view btn-load-more">Load More</button>
-            </div>
+            {requestsLoading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <div style={{ 
+                  display: 'inline-block',
+                  width: '20px',
+                  height: '20px',
+                  border: '3px solid #f3f3f3',
+                  borderTop: '3px solid #3498db',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                <p style={{ marginTop: '10px', color: '#666' }}>Loading friend requests...</p>
+              </div>
+            ) : friendRequests.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <p>No pending friend requests</p>
+              </div>
+            ) : (
+              <>
+                <ul className="nearby-contct">
+                  {friendRequests.map(request => (
+                    <FriendCard key={request.id} friend={request} isRequest={true} />
+                  ))}
+                </ul>
+                <div className="lodmore">
+                  <button className="btn-view btn-load-more">Load More</button>
+                </div>
+              </>
+            )}
           </div>
           
-                     <div className={`tab-pane ${activeTab === 'suggestions' ? 'active fade show' : 'fade'}`} id="suggestions">
-             {loading ? (
-               <div style={{ textAlign: 'center', padding: '20px' }}>
-                 <div style={{ 
-                   display: 'inline-block',
-                   width: '20px',
-                   height: '20px',
-                   border: '3px solid #f3f3f3',
-                   borderTop: '3px solid #3498db',
-                   borderRadius: '50%',
-                   animation: 'spin 1s linear infinite'
-                 }}></div>
-                 <p style={{ marginTop: '10px', color: '#666' }}>Loading suggestions...</p>
-               </div>
-             ) : (
-               <>
-                 <ul className="nearby-contct">
-                   {suggestions.map(suggestion => (
-                     <SuggestionCard key={suggestion.id} suggestion={suggestion} />
-                   ))}
-                 </ul>
-                 <div className="lodmore">
-                   <button className="btn-view btn-load-more">Load More</button>
-                 </div>
-               </>
-             )}
-           </div>
+          <div className={`tab-pane ${activeTab === 'suggestions' ? 'active fade show' : 'fade'}`} id="suggestions">
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '20px' }}>
+                <div style={{ 
+                  display: 'inline-block',
+                  width: '20px',
+                  height: '20px',
+                  border: '3px solid #f3f3f3',
+                  borderTop: '3px solid #3498db',
+                  borderRadius: '50%',
+                  animation: 'spin 1s linear infinite'
+                }}></div>
+                <p style={{ marginTop: '10px', color: '#666' }}>Loading suggestions...</p>
+              </div>
+            ) : suggestions.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px', color: '#666' }}>
+                <p>No suggestions available</p>
+              </div>
+            ) : (
+              <>
+                <ul className="nearby-contct">
+                  {suggestions.map(suggestion => (
+                    <SuggestionCard key={suggestion.id} suggestion={suggestion} />
+                  ))}
+                </ul>
+                <div className="lodmore">
+                  <button className="btn-view btn-load-more">Load More</button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
     </div>
