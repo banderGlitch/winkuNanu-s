@@ -1,34 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   SafeAreaView,
+  KeyboardAvoidingView,
+  Platform,
   Alert,
+  ScrollView,
   Dimensions,
-  Animated,
-  StatusBar,
 } from 'react-native';
-import { router } from 'expo-router';
-import { loginUser, registerUser, LoginCredentials, RegisterData } from '../../utils/apiService';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import KeyboardSafeView from '../../components/KeyboardSafeView';
-import SafeTextInput from '../../components/SafeTextInput';
+import { loginUser, registerUser } from '../../utils/apiService';
 
-const { width, height } = Dimensions.get('window');
+const { height } = Dimensions.get('window');
 
-export default function LoginScreen() {
+export default function LoginScreenStable() {
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // Animation values - use useRef to prevent recreation on re-renders
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(50)).current;
-  const logoScale = useRef(new Animated.Value(0.8)).current;
-  const formOpacity = useRef(new Animated.Value(0)).current;
   
   const [loginData, setLoginData] = useState({
     username: '',
@@ -86,12 +78,6 @@ export default function LoginScreen() {
     return 'Strong';
   };
 
-  // Start animations on mount - simplified to prevent keyboard interference
-  useEffect(() => {
-    // Set form opacity immediately to prevent keyboard interference
-    formOpacity.setValue(1);
-  }, []);
-
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
@@ -122,8 +108,6 @@ export default function LoginScreen() {
       
       if (response.success) {
         Alert.alert('Success', 'Login successful!');
-        // TODO: Navigate to main app
-        // router.replace('/(tabs)');
       } else {
         Alert.alert('Error', response.message || 'Login failed');
       }
@@ -145,7 +129,6 @@ export default function LoginScreen() {
       if (response.success) {
         Alert.alert('Success', 'Registration successful! Please login.');
         setIsLogin(true);
-        // Clear register form
         setRegisterData({
           username: '',
           password: '',
@@ -167,9 +150,7 @@ export default function LoginScreen() {
     }
   };
 
-    // Using SafeTextInput component instead of custom FloatingLabelInput
-
-  const renderLoginForm = React.useCallback(() => (
+  const renderLoginForm = () => (
     <View style={styles.formContainer}>
       <View style={styles.formHeader}>
         <View style={styles.titleContainer}>
@@ -181,53 +162,62 @@ export default function LoginScreen() {
         <Text style={styles.formSubtitle}>Sign in to continue your journey</Text>
       </View>
       
-      <SafeTextInput
-        label="Username"
-        value={loginData.username}
-        onChangeText={(text: string) => setLoginData(prev => ({ ...prev, username: text }))}
-        error={errors.username}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[styles.input, errors.username && styles.inputError]}
+          placeholder="Username"
+          value={loginData.username}
+          onChangeText={(text) => setLoginData(prev => ({ ...prev, username: text }))}
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+        />
+        {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
+      </View>
 
-      <SafeTextInput
-        label="Password"
-        value={loginData.password}
-        onChangeText={(text: string) => setLoginData(prev => ({ ...prev, password: text }))}
-        error={errors.password}
-        secureTextEntry={!showPassword}
-        showPasswordToggle={true}
-        onTogglePassword={() => setShowPassword(prev => !prev)}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[styles.input, errors.password && styles.inputError]}
+          placeholder="Password"
+          value={loginData.password}
+          onChangeText={(text) => setLoginData(prev => ({ ...prev, password: text }))}
+          secureTextEntry={!showPassword}
+          autoCorrect={false}
+          spellCheck={false}
+        />
+        <TouchableOpacity 
+          style={styles.passwordToggle}
+          onPress={() => setShowPassword(prev => !prev)}
+        >
+          <Text>{showPassword ? '🙈' : '👁️'}</Text>
+        </TouchableOpacity>
+        {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+      </View>
 
       <TouchableOpacity style={styles.forgotPassword}>
         <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
-        style={[styles.actionButton, styles.loginButton, isLoading && styles.buttonDisabled]}
+        style={[styles.button, styles.loginButton, isLoading && styles.buttonDisabled]}
         onPress={handleLogin}
         disabled={isLoading}
-        activeOpacity={0.8}
       >
-        {isLoading ? (
-          <LoadingSpinner size="small" color="#fff" />
-        ) : (
-          <View style={styles.buttonContent}>
-            <Text style={styles.actionButtonText}>Sign In</Text>
-            <Text style={styles.buttonSubtext}>Welcome back!</Text>
-          </View>
-        )}
+        <View style={styles.buttonContent}>
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Signing In...' : 'Sign In'}
+          </Text>
+          <Text style={styles.buttonSubtext}>Welcome back!</Text>
+        </View>
       </TouchableOpacity>
       
-      <View style={styles.switchContainer}>
-        <Text style={styles.switchText}>Don't have an account? </Text>
-        <TouchableOpacity onPress={() => setIsLogin(false)} activeOpacity={0.7}>
-          <Text style={styles.switchLink}>Create Account</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={() => setIsLogin(false)} style={styles.switchButton}>
+        <Text style={styles.switchText}>Don't have an account? Create one</Text>
+      </TouchableOpacity>
     </View>
-  ), [loginData, errors, showPassword, isLoading]);
+  );
 
-  const renderRegisterForm = React.useCallback(() => (
+  const renderRegisterForm = () => (
     <View style={styles.formContainer}>
       <View style={styles.formHeader}>
         <View style={styles.titleContainer}>
@@ -249,53 +239,80 @@ export default function LoginScreen() {
         </View>
       </View>
       
-      <SafeTextInput
-        label="Username"
-        value={registerData.username}
-        onChangeText={(text: string) => setRegisterData(prev => ({ ...prev, username: text }))}
-        error={errors.username}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[styles.input, errors.username && styles.inputError]}
+          placeholder="Username"
+          value={registerData.username}
+          onChangeText={(text) => setRegisterData(prev => ({ ...prev, username: text }))}
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+        />
+        {errors.username && <Text style={styles.errorText}>{errors.username}</Text>}
+      </View>
 
       <View style={styles.row}>
         <View style={styles.halfWidth}>
-          <SafeTextInput
-            label="First Name"
+          <TextInput
+            style={[styles.input, errors.firstName && styles.inputError]}
+            placeholder="First Name"
             value={registerData.firstName}
-            onChangeText={(text: string) => setRegisterData(prev => ({ ...prev, firstName: text }))}
-            error={errors.firstName}
+            onChangeText={(text) => setRegisterData(prev => ({ ...prev, firstName: text }))}
             autoCapitalize="words"
+            autoCorrect={false}
+            spellCheck={false}
           />
+          {errors.firstName && <Text style={styles.errorText}>{errors.firstName}</Text>}
         </View>
         <View style={styles.halfWidth}>
-          <SafeTextInput
-            label="Last Name"
+          <TextInput
+            style={[styles.input, errors.lastName && styles.inputError]}
+            placeholder="Last Name"
             value={registerData.lastName}
-            onChangeText={(text: string) => setRegisterData(prev => ({ ...prev, lastName: text }))}
-            error={errors.lastName}
+            onChangeText={(text) => setRegisterData(prev => ({ ...prev, lastName: text }))}
             autoCapitalize="words"
+            autoCorrect={false}
+            spellCheck={false}
           />
+          {errors.lastName && <Text style={styles.errorText}>{errors.lastName}</Text>}
         </View>
       </View>
 
-      <SafeTextInput
-        label="Email"
-        value={registerData.email}
-        onChangeText={(text: string) => setRegisterData(prev => ({ ...prev, email: text }))}
-        error={errors.email}
-        keyboardType="email-address"
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[styles.input, errors.email && styles.inputError]}
+          placeholder="Email"
+          value={registerData.email}
+          onChangeText={(text) => setRegisterData(prev => ({ ...prev, email: text }))}
+          keyboardType="email-address"
+          autoCapitalize="none"
+          autoCorrect={false}
+          spellCheck={false}
+        />
+        {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+      </View>
 
       {/* Password Strength Indicator */}
       <View style={styles.passwordSection}>
-        <SafeTextInput
-          label="Password"
-          value={registerData.password}
-          onChangeText={(text: string) => setRegisterData(prev => ({ ...prev, password: text }))}
-          error={errors.password}
-          secureTextEntry={!showPassword}
-          showPasswordToggle={true}
-          onTogglePassword={() => setShowPassword(prev => !prev)}
-        />
+        <View style={styles.inputContainer}>
+          <TextInput
+            style={[styles.input, errors.password && styles.inputError]}
+            placeholder="Password"
+            value={registerData.password}
+            onChangeText={(text) => setRegisterData(prev => ({ ...prev, password: text }))}
+            secureTextEntry={!showPassword}
+            autoCorrect={false}
+            spellCheck={false}
+          />
+          <TouchableOpacity 
+            style={styles.passwordToggle}
+            onPress={() => setShowPassword(prev => !prev)}
+          >
+            <Text>{showPassword ? '🙈' : '👁️'}</Text>
+          </TouchableOpacity>
+          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+        </View>
         {registerData.password.length > 0 && (
           <View style={styles.passwordStrength}>
             <Text style={styles.strengthLabel}>Password strength:</Text>
@@ -317,15 +334,24 @@ export default function LoginScreen() {
         )}
       </View>
 
-      <SafeTextInput
-        label="Confirm Password"
-        value={registerData.confirmPassword}
-        onChangeText={(text: string) => setRegisterData(prev => ({ ...prev, confirmPassword: text }))}
-        error={errors.confirmPassword}
-        secureTextEntry={!showConfirmPassword}
-        showPasswordToggle={true}
-        onTogglePassword={() => setShowConfirmPassword(prev => !prev)}
-      />
+      <View style={styles.inputContainer}>
+        <TextInput
+          style={[styles.input, errors.confirmPassword && styles.inputError]}
+          placeholder="Confirm Password"
+          value={registerData.confirmPassword}
+          onChangeText={(text) => setRegisterData(prev => ({ ...prev, confirmPassword: text }))}
+          secureTextEntry={!showConfirmPassword}
+          autoCorrect={false}
+          spellCheck={false}
+        />
+        <TouchableOpacity 
+          style={styles.passwordToggle}
+          onPress={() => setShowConfirmPassword(prev => !prev)}
+        >
+          <Text>{showConfirmPassword ? '🙈' : '👁️'}</Text>
+        </TouchableOpacity>
+        {errors.confirmPassword && <Text style={styles.errorText}>{errors.confirmPassword}</Text>}
+      </View>
 
       {/* Enhanced Gender Selection */}
       <View style={styles.genderContainer}>
@@ -376,55 +402,49 @@ export default function LoginScreen() {
       </View>
 
       <TouchableOpacity
-        style={[styles.actionButton, styles.registerButton, isLoading && styles.buttonDisabled]}
+        style={[styles.button, styles.registerButton, isLoading && styles.buttonDisabled]}
         onPress={handleRegister}
         disabled={isLoading}
-        activeOpacity={0.8}
       >
-        {isLoading ? (
-          <LoadingSpinner size="small" color="#fff" />
-        ) : (
-          <View style={styles.buttonContent}>
-            <Text style={styles.actionButtonText}>Create Account</Text>
-            <Text style={styles.buttonSubtext}>Join the community</Text>
-          </View>
-        )}
+        <View style={styles.buttonContent}>
+          <Text style={styles.buttonText}>
+            {isLoading ? 'Creating Account...' : 'Create Account'}
+          </Text>
+          <Text style={styles.buttonSubtext}>Join the community</Text>
+        </View>
       </TouchableOpacity>
       
-      <View style={styles.switchContainer}>
-        <Text style={styles.switchText}>Already have an account? </Text>
-        <TouchableOpacity onPress={() => setIsLogin(true)} activeOpacity={0.7}>
-          <Text style={styles.switchLink}>Sign In</Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity onPress={() => setIsLogin(true)} style={styles.switchButton}>
+        <Text style={styles.switchText}>Already have an account? Sign in</Text>
+      </TouchableOpacity>
     </View>
-  ), [registerData, errors, showPassword, showConfirmPassword, isLoading]);
+  );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#667eea" />
-      <KeyboardSafeView
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardView}
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="handled"
-        keyboardDismissMode="none"
       >
-        <View style={styles.header}>
-          <View style={styles.logoContainer}>
-            <View style={styles.logoBackground}>
-              <Text style={styles.logo}>😉</Text>
+        <View style={styles.background}>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContent}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="none"
+            nestedScrollEnabled={true}
+          >
+            <View style={styles.header}>
+              <Text style={styles.brandTitle}>Winku</Text>
+              <Text style={styles.brandSubtitle}>Connect • Share • Inspire</Text>
             </View>
-          </View>
-          <Text style={styles.brandTitle}>Winku</Text>
-          <Text style={styles.brandSubtitle}>
-            Connect • Share • Inspire
-          </Text>
+            
+            <View style={styles.formSection}>
+              {isLogin ? renderLoginForm() : renderRegisterForm()}
+            </View>
+          </ScrollView>
         </View>
-        
-        <View style={styles.formSection}>
-          {isLogin ? renderLoginForm() : renderRegisterForm()}
-        </View>
-      </KeyboardSafeView>
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -440,7 +460,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#667eea',
   },
-
   scrollContent: {
     flexGrow: 1,
     paddingBottom: 20,
@@ -451,37 +470,16 @@ const styles = StyleSheet.create({
     paddingBottom: height * 0.04,
     paddingHorizontal: 20,
   },
-  logoContainer: {
-    marginBottom: 20,
-  },
-  logoBackground: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 8,
-  },
-  logo: {
-    fontSize: 40,
-  },
   brandTitle: {
     fontSize: 48,
     fontWeight: '800',
     color: '#fff',
     marginBottom: 10,
-    letterSpacing: 2,
   },
   brandSubtitle: {
     fontSize: 16,
     color: 'rgba(255, 255, 255, 0.9)',
     textAlign: 'center',
-    letterSpacing: 1,
   },
   formSection: {
     backgroundColor: 'rgba(255, 255, 255, 0.98)',
@@ -490,10 +488,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     paddingVertical: 35,
     shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 10,
-    },
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
     shadowRadius: 20,
     elevation: 15,
@@ -505,115 +500,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 30,
   },
-  formTitle: {
-    fontSize: 32,
-    fontWeight: '700',
-    color: '#2d3748',
-    marginBottom: 8,
-  },
-  formSubtitle: {
-    fontSize: 16,
-    color: '#718096',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  // Styles are now handled by SafeTextInput component
-  forgotPassword: {
-    alignSelf: 'flex-end',
-    marginBottom: 25,
-  },
-  forgotPasswordText: {
-    color: '#667eea',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  actionButton: {
-    paddingVertical: 18,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 25,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 6,
-  },
-  loginButton: {
-    backgroundColor: '#667eea',
-  },
-  registerButton: {
-    backgroundColor: '#764ba2',
-  },
-  buttonDisabled: {
-    opacity: 0.7,
-  },
-  actionButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: '700',
-    letterSpacing: 0.5,
-  },
-  switchContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  switchText: {
-    fontSize: 15,
-    color: '#718096',
-  },
-  switchLink: {
-    fontSize: 15,
-    color: '#667eea',
-    fontWeight: '600',
-  },
-  row: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  halfWidth: {
-    flex: 1,
-  },
-  genderContainer: {
-    marginBottom: 20,
-  },
-  genderLabel: {
-    fontSize: 16,
-    color: '#2d3748',
-    marginBottom: 12,
-    fontWeight: '600',
-  },
-  genderOptions: {
-    flexDirection: 'row',
-    gap: 15,
-  },
-  genderOption: {
-    flex: 1,
-    paddingVertical: 15,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-    backgroundColor: '#f7fafc',
-    alignItems: 'center',
-  },
-  genderOptionSelected: {
-    borderColor: '#667eea',
-    backgroundColor: '#667eea',
-  },
-  genderOptionText: {
-    fontSize: 16,
-    color: '#718096',
-    fontWeight: '600',
-  },
-  genderOptionTextSelected: {
-    color: '#fff',
-  },
   titleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 8,
+  },
+  formTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#2d3748',
     marginBottom: 8,
   },
   titleBadge: {
@@ -627,6 +523,12 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 12,
     fontWeight: '600',
+  },
+  formSubtitle: {
+    fontSize: 16,
+    color: '#718096',
+    textAlign: 'center',
+    lineHeight: 22,
   },
   progressContainer: {
     marginTop: 20,
@@ -649,6 +551,88 @@ const styles = StyleSheet.create({
     color: '#718096',
     textAlign: 'center',
     fontWeight: '500',
+  },
+  inputContainer: {
+    marginBottom: 20,
+    position: 'relative',
+  },
+  input: {
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    borderRadius: 16,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    fontSize: 16,
+    backgroundColor: '#f7fafc',
+  },
+  inputError: {
+    borderColor: '#fc8181',
+    backgroundColor: '#fed7d7',
+  },
+  passwordToggle: {
+    position: 'absolute',
+    right: 15,
+    top: 15,
+    padding: 5,
+  },
+  errorText: {
+    color: '#e53e3e',
+    fontSize: 12,
+    marginTop: 5,
+    marginLeft: 5,
+  },
+  forgotPassword: {
+    alignSelf: 'flex-end',
+    marginBottom: 25,
+  },
+  forgotPasswordText: {
+    color: '#667eea',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  button: {
+    paddingVertical: 18,
+    borderRadius: 16,
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  loginButton: {
+    backgroundColor: '#667eea',
+  },
+  registerButton: {
+    backgroundColor: '#764ba2',
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonContent: {
+    alignItems: 'center',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  buttonSubtext: {
+    fontSize: 12,
+    color: 'rgba(255, 255, 255, 0.8)',
+    marginTop: 2,
+    fontWeight: '400',
+  },
+  switchButton: {
+    alignItems: 'center',
+  },
+  switchText: {
+    color: '#667eea',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  row: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  halfWidth: {
+    flex: 1,
   },
   passwordSection: {
     marginBottom: 20,
@@ -677,9 +661,44 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600',
   },
+  genderContainer: {
+    marginBottom: 20,
+  },
+  genderLabel: {
+    fontSize: 16,
+    color: '#2d3748',
+    marginBottom: 12,
+    fontWeight: '600',
+  },
+  genderOptions: {
+    flexDirection: 'row',
+    gap: 15,
+  },
+  genderOption: {
+    flex: 1,
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f7fafc',
+    alignItems: 'center',
+  },
+  genderOptionSelected: {
+    borderColor: '#667eea',
+    backgroundColor: '#667eea',
+  },
   genderIcon: {
     fontSize: 20,
     marginBottom: 4,
+  },
+  genderOptionText: {
+    fontSize: 16,
+    color: '#718096',
+    fontWeight: '600',
+  },
+  genderOptionTextSelected: {
+    color: '#fff',
   },
   termsContainer: {
     flexDirection: 'row',
@@ -718,13 +737,4 @@ const styles = StyleSheet.create({
     color: '#667eea',
     fontWeight: '600',
   },
-  buttonContent: {
-    alignItems: 'center',
-  },
-  buttonSubtext: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.8)',
-    marginTop: 2,
-    fontWeight: '400',
-  },
-});
+}); 
