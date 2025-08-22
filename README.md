@@ -1,50 +1,131 @@
-# Welcome to your Expo app 👋
+# WinkuNanu Mobile App
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A React Native mobile application for the WinkuNanu social media platform, built with Expo.
 
-## Get started
+## Features
 
-1. Install dependencies
+- **Authentication**: Login and registration with real API integration
+- **Token Management**: Automatic token refresh and secure storage
+- **Modern UI**: Beautiful gradient design with form validation
+- **TypeScript**: Full type safety throughout the application
 
-   ```bash
-   npm install
-   ```
+## Prerequisites
 
-2. Start the app
+- Node.js (v16 or higher)
+- npm or yarn
+- Expo CLI
+- Expo Go app on your mobile device (for testing)
 
-   ```bash
-   npx expo start
-   ```
+## Setup Instructions
 
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+### 1. Install Dependencies
 
 ```bash
-npm run reset-project
+cd WinkuNanuMobile/WinkuNanuMobile
+npm install
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+### 2. Install Additional Dependencies
 
-## Learn more
+```bash
+npm install axios @react-native-async-storage/async-storage jwt-decode
+```
 
-To learn more about developing your project with Expo, look at the following resources:
+### 3. Configure API Base URL
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+Update the base URL in `utils/axiosInstance.ts` to point to your backend:
 
-## Join the community
+```typescript
+const api = axios.create({
+  baseURL: 'http://your-backend-url:8080', // Update this
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+```
 
-Join our community of developers creating universal apps.
+### 4. Start the Development Server
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+```bash
+npx expo start
+```
+
+### 5. Test the App
+
+- Scan the QR code with Expo Go app (iOS/Android)
+- Or press 'a' for Android emulator or 'i' for iOS simulator
+
+## Project Structure
+
+```
+WinkuNanuMobile/
+├── app/
+│   ├── auth/
+│   │   └── login.tsx          # Login/Register screen
+│   ├── _layout.tsx            # Root layout
+│   └── index.tsx              # Entry point
+├── utils/
+│   ├── apiService.ts          # API functions
+│   ├── axiosInstance.ts       # Axios configuration
+│   └── tokenUtils.ts          # Token management
+├── assets/                    # Images, fonts, etc.
+└── package.json
+```
+
+## API Integration
+
+The app includes comprehensive API integration with:
+
+- **Authentication**: Login, register, logout, token refresh
+- **User Management**: Profile fetch/update, user search
+- **Posts**: Create, like, comment, fetch feeds
+- **Social**: Follow/unfollow, check follow status
+- **Chat**: Conversations, messages
+- **Images**: Upload, fetch pictures
+
+## Token Management
+
+- Automatic token storage in AsyncStorage
+- Automatic token refresh on 401 errors
+- Secure token handling with JWT decode
+- Session management and logout functionality
+
+## Development
+
+### Adding New Screens
+
+1. Create a new file in `app/` directory
+2. Add the route to `_layout.tsx` if needed
+3. Use the API service functions for data fetching
+
+### API Service
+
+All API calls are centralized in `utils/apiService.ts` with:
+- TypeScript interfaces for type safety
+- Consistent error handling
+- Automatic token management
+- Response formatting
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Module not found errors**: Run `npm install` to install dependencies
+2. **API connection errors**: Check the base URL in `axiosInstance.ts`
+3. **Token issues**: Clear app data or reinstall the app
+
+### Backend Requirements
+
+Ensure your backend is running and accessible at the configured URL. The app expects:
+- RESTful API endpoints
+- JWT token authentication
+- CORS enabled for mobile requests
+
+## Next Steps
+
+- Add more screens (feeds, profile, chat)
+- Implement push notifications
+- Add offline support
+- Optimize performance
+- Add unit tests
