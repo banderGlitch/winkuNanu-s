@@ -52,6 +52,8 @@ function RootLayoutNav() {
       <Stack>
         <Stack.Screen name="auth/login" options={{ headerShown: false }} />
         <Stack.Screen name="feeds" options={{ headerShown: false }} />
+        <Stack.Screen name="chat-list" options={{ headerShown: false }} />
+        <Stack.Screen name="chat" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
     </ThemeProvider>

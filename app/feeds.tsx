@@ -12,6 +12,7 @@ import {
   FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 import PostCard from '../components/PostCard';
 import StoryCarousel from '../components/StoryCarousel';
@@ -259,7 +260,10 @@ export default function FeedsScreen() {
           <TouchableOpacity style={styles.headerButton}>
             <Ionicons name="notifications-outline" size={24} color="#fff" />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.headerButton}>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => router.push('/chat-list')}
+          >
             <Ionicons name="chatbubble-outline" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
