@@ -3,8 +3,8 @@ import { router } from 'expo-router';
 
 export default function Index() {
   useEffect(() => {
-    // Redirect to the login screen
-    router.replace('/auth/login');
+    // Redirect to the feeds screen for now
+    router.replace('/feeds');
   }, []);
 
   return null;

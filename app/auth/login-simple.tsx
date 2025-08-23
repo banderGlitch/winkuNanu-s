@@ -12,6 +12,7 @@ import {
   ScrollView,
   Dimensions,
 } from 'react-native';
+
 import { loginUser, registerUser } from '../../utils/apiService';
 
 const { height } = Dimensions.get('window');

@@ -202,21 +202,33 @@ export default function LoginScreen() {
         <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.actionButton, styles.loginButton, isLoading && styles.buttonDisabled]}
-        onPress={handleLogin}
-        disabled={isLoading}
-        activeOpacity={0.8}
-      >
-        {isLoading ? (
-          <LoadingSpinner size="small" color="#fff" />
-        ) : (
-          <View style={styles.buttonContent}>
-            <Text style={styles.actionButtonText}>Sign In</Text>
-            <Text style={styles.buttonSubtext}>Welcome back!</Text>
-          </View>
-        )}
-      </TouchableOpacity>
+             <TouchableOpacity
+         style={[styles.actionButton, styles.loginButton, isLoading && styles.buttonDisabled]}
+         onPress={handleLogin}
+         disabled={isLoading}
+         activeOpacity={0.8}
+       >
+         {isLoading ? (
+           <LoadingSpinner size="small" color="#fff" />
+         ) : (
+           <View style={styles.buttonContent}>
+             <Text style={styles.actionButtonText}>Sign In</Text>
+             <Text style={styles.buttonSubtext}>Welcome back!</Text>
+           </View>
+         )}
+       </TouchableOpacity>
+       
+               {/* Temporary button to test feeds */}
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: '#764ba2', marginTop: 15 }]}
+          onPress={() => router.push('/feeds')}
+          activeOpacity={0.8}
+        >
+         <View style={styles.buttonContent}>
+           <Text style={styles.actionButtonText}>Test Feeds</Text>
+           <Text style={styles.buttonSubtext}>Go to feeds page</Text>
+         </View>
+       </TouchableOpacity>
       
       <View style={styles.switchContainer}>
         <Text style={styles.switchText}>Don't have an account? </Text>
