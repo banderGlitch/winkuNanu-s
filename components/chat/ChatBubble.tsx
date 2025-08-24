@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Dimensions,
-  TouchableOpacity,
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -15,7 +9,7 @@ interface Message {
   text: string;
   sender: 'me' | 'them';
   timestamp: string;
-  status: 'sending' | 'sent' | 'read';
+  status: 'sending' | 'sent' | 'delivered' | 'read';
 }
 
 interface ChatBubbleProps {
@@ -24,68 +18,44 @@ interface ChatBubbleProps {
 }
 
 export default function ChatBubble({ message, isOwnMessage }: ChatBubbleProps) {
-  const { text, timestamp, status } = message;
-
   const getStatusIcon = () => {
-    switch (status) {
+    switch (message.status) {
       case 'sending':
         return <Ionicons name="time-outline" size={12} color="#94a3b8" />;
       case 'sent':
         return <Ionicons name="checkmark" size={12} color="#94a3b8" />;
+      case 'delivered':
+        return (
+          <View style={styles.doubleCheck}>
+            <Ionicons name="checkmark" size={12} color="#94a3b8" />
+            <Ionicons name="checkmark" size={12} color="#94a3b8" />
+          </View>
+        );
       case 'read':
-        return <Ionicons name="checkmark-done" size={12} color="#1DA1F2" />;
+        return (
+          <View style={styles.doubleCheck}>
+            <Ionicons name="checkmark" size={12} color="#667eea" />
+            <Ionicons name="checkmark" size={12} color="#667eea" />
+          </View>
+        );
       default:
         return null;
     }
   };
 
-  const getStatusText = () => {
-    switch (status) {
-      case 'sending':
-        return 'sending...';
-      case 'sent':
-        return 'sent';
-      case 'read':
-        return 'read';
-      default:
-        return '';
-    }
-  };
-
   return (
-    <View style={[
-      styles.container,
-      isOwnMessage ? styles.ownMessageContainer : styles.otherMessageContainer
-    ]}>
-      {/* Message Bubble */}
-      <View style={[
-        styles.bubble,
-        isOwnMessage ? styles.ownBubble : styles.otherBubble
-      ]}>
-        <Text style={[
-          styles.messageText,
-          isOwnMessage ? styles.ownMessageText : styles.otherMessageText
-        ]}>
-          {text}
+    <View style={[styles.container, isOwnMessage ? styles.ownMessageContainer : styles.otherMessageContainer]}>
+      <View style={[styles.bubble, isOwnMessage ? styles.ownBubble : styles.otherBubble]}>
+        <Text style={[styles.messageText, isOwnMessage ? styles.ownMessageText : styles.otherMessageText]}>
+          {message.text}
         </Text>
       </View>
-
-      {/* Message Footer */}
-      <View style={[
-        styles.footer,
-        isOwnMessage ? styles.ownFooter : styles.otherFooter
-      ]}>
-        <Text style={[
-          styles.timestamp,
-          isOwnMessage ? styles.ownTimestamp : styles.otherTimestamp
-        ]}>
-          {timestamp}
-        </Text>
-        
+      
+      <View style={[styles.footer, isOwnMessage ? styles.ownFooter : styles.otherFooter]}>
+        <Text style={styles.timestamp}>{message.timestamp}</Text>
         {isOwnMessage && (
           <View style={styles.statusContainer}>
             {getStatusIcon()}
-            <Text style={styles.statusText}>{getStatusText()}</Text>
           </View>
         )}
       </View>
@@ -110,19 +80,17 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 1,
+    elevation: 2,
   },
   ownBubble: {
     backgroundColor: '#667eea',
     borderBottomRightRadius: 6,
   },
   otherBubble: {
-    backgroundColor: '#fff',
+    backgroundColor: '#f1f5f9',
     borderBottomLeftRadius: 6,
-    borderWidth: 1,
-    borderColor: '#e2e8f0',
   },
   messageText: {
     fontSize: 16,
@@ -132,7 +100,7 @@ const styles = StyleSheet.create({
     color: '#fff',
   },
   otherMessageText: {
-    color: '#1f2937',
+    color: '#1e293b',
   },
   footer: {
     flexDirection: 'row',
@@ -149,23 +117,17 @@ const styles = StyleSheet.create({
   },
   timestamp: {
     fontSize: 11,
-    fontWeight: '500',
-  },
-  ownTimestamp: {
-    color: 'rgba(255, 255, 255, 0.7)',
-  },
-  otherTimestamp: {
     color: '#94a3b8',
+    fontWeight: '400',
   },
   statusContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
-    marginLeft: 8,
+    marginLeft: 6,
   },
-  statusText: {
-    fontSize: 11,
-    color: '#94a3b8',
-    fontWeight: '500',
+  doubleCheck: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: -2,
   },
 }); 

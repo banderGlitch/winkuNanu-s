@@ -14,9 +14,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-import ChatHeader from '../components/ChatHeader';
-import ChatBubble from '../components/ChatBubble';
-import ChatInput from '../components/ChatInput';
+import ChatHeader from '../components/chat/ChatHeader';
+import ChatBubble from '../components/chat/ChatBubble';
+import ChatInput from '../components/chat/ChatInput';
 
 const { width, height } = Dimensions.get('window');
 

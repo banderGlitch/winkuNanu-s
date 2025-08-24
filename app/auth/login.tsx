@@ -12,9 +12,9 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { loginUser, registerUser, LoginCredentials, RegisterData } from '../../utils/apiService';
-import LoadingSpinner from '../../components/LoadingSpinner';
-import KeyboardSafeView from '../../components/KeyboardSafeView';
-import SafeTextInput from '../../components/SafeTextInput';
+import LoadingSpinner from '../../components/ui/LoadingSpinner';
+import KeyboardSafeView from '../../components/ui/KeyboardSafeView';
+import SafeTextInput from '../../components/ui/SafeTextInput';
 
 const { width, height } = Dimensions.get('window');
 

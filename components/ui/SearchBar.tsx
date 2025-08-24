@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  View,
-  TextInput,
-  StyleSheet,
-  TouchableOpacity,
-  Dimensions,
-} from 'react-native';
+import { View, TextInput, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
@@ -18,38 +12,29 @@ interface SearchBarProps {
   autoFocus?: boolean;
 }
 
-export default function SearchBar({ 
-  value, 
-  onChangeText, 
+export default function SearchBar({
+  value,
+  onChangeText,
   placeholder = "Search...",
   onClear,
-  autoFocus = false 
+  autoFocus = false
 }: SearchBarProps) {
-  const handleClear = () => {
-    onChangeText('');
-    onClear?.();
-  };
-
   return (
     <View style={styles.container}>
       <View style={styles.searchContainer}>
-        <View style={styles.searchIcon}>
-          <Ionicons name="search" size={20} color="#94a3b8" />
-        </View>
-        
+        <Ionicons name="search" size={20} color="#94a3b8" style={styles.searchIcon} />
         <TextInput
-          style={styles.textInput}
+          style={styles.searchInput}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
           placeholderTextColor="#94a3b8"
           autoFocus={autoFocus}
-          returnKeyType="search"
-          clearButtonMode="never"
+          autoCorrect={false}
+          autoCapitalize="none"
         />
-        
-        {value.length > 0 && (
-          <TouchableOpacity style={styles.clearButton} onPress={handleClear}>
+        {value.length > 0 && onClear && (
+          <TouchableOpacity onPress={onClear} style={styles.clearButton}>
             <Ionicons name="close-circle" size={20} color="#94a3b8" />
           </TouchableOpacity>
         )}
@@ -60,29 +45,30 @@ export default function SearchBar({
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
   },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: '#f1f5f9',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
     borderWidth: 1,
     borderColor: '#e2e8f0',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 12,
   },
-  textInput: {
+  searchInput: {
     flex: 1,
     fontSize: 16,
-    color: '#1f2937',
-    paddingVertical: 4,
+    color: '#1e293b',
+    paddingVertical: 0,
   },
   clearButton: {
     marginLeft: 8,
-    padding: 2,
+    padding: 4,
   },
 }); 

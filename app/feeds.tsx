@@ -14,13 +14,11 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import PostCard from '../components/PostCard';
-import StoryCarousel from '../components/StoryCarousel';
-import CreatePostButton from '../components/CreatePostButton';
+import PostCard from '../components/feed/PostCard';
+import StoryCarousel from '../components/feed/StoryCarousel';
+import CreatePostButton from '../components/feed/CreatePostButton';
 
 const { width, height } = Dimensions.get('window');
-
-
 
 // Mock data for feeds
 const mockPosts = [
@@ -194,14 +192,6 @@ export default function FeedsScreen() {
   const [stories, setStories] = useState(mockStories);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('forYou');
-  
-  // Temporarily disable scroll animation to fix render error
-  // const scrollY = useRef(new Animated.Value(0)).current;
-  // const headerOpacity = scrollY.interpolate({
-  //   inputRange: [0, 100],
-  //   outputRange: [1, 0.9],
-  //   extrapolate: 'clamp',
-  // });
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

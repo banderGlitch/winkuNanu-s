@@ -12,8 +12,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 
-import ChatListItem from '../components/ChatListItem';
-import SearchBar from '../components/SearchBar';
+import ChatListItem from '../components/chat/ChatListItem';
+import SearchBar from '../components/ui/SearchBar';
 
 const { width, height } = Dimensions.get('window');
 
