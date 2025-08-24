@@ -10,13 +10,16 @@ import {
   Image,
   Dimensions,
   FlatList,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useAuth } from '../utils/authContext';
 
 import PostCard from '../components/feed/PostCard';
 import StoryCarousel from '../components/feed/StoryCarousel';
 import CreatePostButton from '../components/feed/CreatePostButton';
+import ProtectedRoute from '../components/ui/ProtectedRoute';
 
 const { width, height } = Dimensions.get('window');
 
@@ -188,6 +191,7 @@ const mockStories = [
 ];
 
 export default function FeedsScreen() {
+  const { user, logout } = useAuth();
   const [posts, setPosts] = useState(mockPosts);
   const [stories, setStories] = useState(mockStories);
   const [refreshing, setRefreshing] = useState(false);
@@ -242,6 +246,11 @@ export default function FeedsScreen() {
           <View style={styles.verifiedBadge}>
             <Ionicons name="checkmark-circle" size={16} color="#1DA1F2" />
           </View>
+          {user && (
+            <View style={styles.userInfo}>
+              <Text style={styles.welcomeText}>Welcome, {user.fullName}</Text>
+            </View>
+          )}
         </View>
         <View style={styles.headerRight}>
           <TouchableOpacity style={styles.headerButton}>
@@ -255,6 +264,21 @@ export default function FeedsScreen() {
             onPress={() => router.push('/chat-list')}
           >
             <Ionicons name="chatbubble-outline" size={24} color="#fff" />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={styles.headerButton}
+            onPress={() => {
+              Alert.alert(
+                'Logout',
+                'Are you sure you want to logout?',
+                [
+                  { text: 'Cancel', style: 'cancel' },
+                  { text: 'Logout', style: 'destructive', onPress: logout }
+                ]
+              );
+            }}
+          >
+            <Ionicons name="log-out-outline" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -308,32 +332,34 @@ export default function FeedsScreen() {
   const keyExtractor = useCallback((item: any) => item.id, []);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#667eea" />
-      <View style={styles.mainContainer}>
-        <FlatList
-          data={posts}
-          renderItem={renderPost}
-          keyExtractor={keyExtractor}
-          ListHeaderComponent={
-            <>
-              {renderHeader()}
-              {renderStories()}
-            </>
-          }
-          refreshControl={
-            <RefreshControl
-              refreshing={refreshing}
-              onRefresh={onRefresh}
-              tintColor="#fff"
-              colors={['#fff']}
-            />
-          }
-          showsVerticalScrollIndicator={false}
-        />
-        <CreatePostButton />
-      </View>
-    </SafeAreaView>
+    <ProtectedRoute>
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle="light-content" backgroundColor="#667eea" />
+        <View style={styles.mainContainer}>
+          <FlatList
+            data={posts}
+            renderItem={renderPost}
+            keyExtractor={keyExtractor}
+            ListHeaderComponent={
+              <>
+                {renderHeader()}
+                {renderStories()}
+              </>
+            }
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                tintColor="#fff"
+                colors={['#fff']}
+              />
+            }
+            showsVerticalScrollIndicator={false}
+          />
+          <CreatePostButton />
+        </View>
+      </SafeAreaView>
+    </ProtectedRoute>
   );
 }
 
@@ -403,5 +429,13 @@ const styles = StyleSheet.create({
   },
   storiesContainer: {
     marginBottom: 20,
+  },
+  userInfo: {
+    marginLeft: 15,
+  },
+  welcomeText: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontWeight: '500',
   },
 }); 

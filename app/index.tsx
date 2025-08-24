@@ -1,11 +1,21 @@
-import { useEffect } from 'react';
-import { router } from 'expo-router';
+import React from 'react';
+import { View, StyleSheet } from 'react-native';
+import { useAuth } from '../utils/authContext';
+import LoadingScreen from '../components/ui/LoadingScreen';
 
 export default function Index() {
-  useEffect(() => {
-    // Redirect to the feeds screen for now
-    router.replace('/feeds');
-  }, []);
+  const { isLoading } = useAuth();
 
-  return null;
-} 
+  if (isLoading) {
+    return <LoadingScreen message="Welcome to Winku" />;
+  }
+
+  // This component will not render anything as AuthContext handles navigation
+  return <View style={styles.container} />;
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+}); 

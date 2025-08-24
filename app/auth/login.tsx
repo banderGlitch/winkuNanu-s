@@ -11,7 +11,7 @@ import {
   StatusBar,
 } from 'react-native';
 import { router } from 'expo-router';
-import { loginUser, registerUser, LoginCredentials, RegisterData } from '../../utils/apiService';
+import { useAuth } from '../../utils/authContext';
 import LoadingSpinner from '../../components/ui/LoadingSpinner';
 import KeyboardSafeView from '../../components/ui/KeyboardSafeView';
 import SafeTextInput from '../../components/ui/SafeTextInput';
@@ -19,6 +19,7 @@ import SafeTextInput from '../../components/ui/SafeTextInput';
 const { width, height } = Dimensions.get('window');
 
 export default function LoginScreen() {
+  const { login, register, isLoading: authLoading } = useAuth();
   const [isLogin, setIsLogin] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -118,14 +119,13 @@ export default function LoginScreen() {
     
     setIsLoading(true);
     try {
-      const response = await loginUser(loginData);
+      const success = await login(loginData);
       
-      if (response.success) {
-        Alert.alert('Success', 'Login successful!');
-        // TODO: Navigate to main app
-        // router.replace('/(tabs)');
+      if (success) {
+        // Login successful - AuthContext will handle redirect
+        console.log('Login successful!');
       } else {
-        Alert.alert('Error', response.message || 'Login failed');
+        Alert.alert('Error', 'Invalid username or password. Please try again.');
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -140,9 +140,9 @@ export default function LoginScreen() {
     
     setIsLoading(true);
     try {
-      const response = await registerUser(registerData);
+      const success = await register(registerData);
       
-      if (response.success) {
+      if (success) {
         Alert.alert('Success', 'Registration successful! Please login.');
         setIsLogin(true);
         // Clear register form
@@ -157,7 +157,7 @@ export default function LoginScreen() {
           dob: '2025-06-11',
         });
       } else {
-        Alert.alert('Error', response.message || 'Registration failed');
+        Alert.alert('Error', 'Registration failed. Please try again.');
       }
     } catch (error) {
       console.error('Registration error:', error);

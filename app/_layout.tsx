@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 
 import { useColorScheme } from 'react-native';
+import { AuthProvider } from '../utils/authContext';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -49,13 +50,15 @@ function RootLayoutNav() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="auth/login" options={{ headerShown: false }} />
-        <Stack.Screen name="feeds" options={{ headerShown: false }} />
-        <Stack.Screen name="chat-list" options={{ headerShown: false }} />
-        <Stack.Screen name="chat" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
+      <AuthProvider>
+        <Stack>
+          <Stack.Screen name="auth/login" options={{ headerShown: false }} />
+          <Stack.Screen name="feeds" options={{ headerShown: false }} />
+          <Stack.Screen name="chat-list" options={{ headerShown: false }} />
+          <Stack.Screen name="chat" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+      </AuthProvider>
     </ThemeProvider>
   );
 }
