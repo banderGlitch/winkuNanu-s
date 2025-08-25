@@ -22,6 +22,7 @@ interface AuthContextType {
   register: (data: RegisterData) => Promise<boolean>;
   logout: () => Promise<void>;
   checkAuthStatus: () => Promise<void>;
+  handleAuthFailure: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -49,17 +50,107 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuthStatus();
   }, []);
 
+  // Handle authentication failures (called when tokens are expired)
+  const handleAuthFailure = async () => {
+    console.log('🚨 AuthContext: Handling authentication failure...');
+    try {
+      // Clear all stored data
+      await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('refreshToken');
+      await AsyncStorage.removeItem('userData');
+      
+      // Clear state
+      setToken(null);
+      setUser(null);
+      setIsAuthenticated(false);
+      
+      console.log('🧹 AuthContext: All tokens cleared, redirecting to login');
+      
+      // Redirect to login
+      router.replace('/auth/login');
+    } catch (error) {
+      console.error('❌ AuthContext: Error handling auth failure:', error);
+      // Force redirect even if clearing fails
+      router.replace('/auth/login');
+    }
+  };
+
+  // Check if token is expired (similar to web implementation)
+  const isTokenExpired = (token: string): boolean => {
+    try {
+      const decoded = jwtDecode(token) as any;
+      const currentTime = Date.now() / 1000;
+      return decoded.exp < currentTime;
+    } catch (error) {
+      console.error('Error decoding token:', error);
+      return true;
+    }
+  };
+
+  // Check authentication status on app start
   const checkAuthStatus = async () => {
     try {
       setIsLoading(true);
       
-      // Get stored token
+      // Get stored tokens and user data
       const storedToken = await AsyncStorage.getItem('authToken');
+      const storedRefreshToken = await AsyncStorage.getItem('refreshToken');
       const storedUser = await AsyncStorage.getItem('userData');
       
       if (storedToken && storedUser) {
-        // TODO: Validate token with backend
-        // For now, we'll assume the token is valid if it exists
+        // Check if token is expired
+        if (isTokenExpired(storedToken)) {
+          console.log('⚠️ AuthContext: Access token expired, attempting refresh...');
+          
+          // Try to refresh the token automatically
+          if (storedRefreshToken) {
+            try {
+              const response = await fetch('http://192.168.1.12:8080/api/v1/auth/refresh', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ refreshToken: storedRefreshToken }),
+              });
+
+              if (response.ok) {
+                const data = await response.json();
+                if (data.token) {
+                  console.log('✅ AuthContext: Token refreshed automatically on app start');
+                  
+                  // Save new tokens
+                  await AsyncStorage.setItem('authToken', data.token);
+                  if (data.refreshToken) {
+                    await AsyncStorage.setItem('refreshToken', data.refreshToken);
+                  }
+                  
+                  // Update state and redirect to feeds
+                  const userData = JSON.parse(storedUser);
+                  setToken(data.token);
+                  setUser(userData);
+                  setIsAuthenticated(true);
+                  router.replace('/feeds');
+                  return;
+                }
+              }
+            } catch (refreshError) {
+              console.log('❌ AuthContext: Auto-refresh failed on app start:', refreshError);
+            }
+          }
+          
+          // If refresh failed, clear tokens and redirect to login
+          console.log('❌ AuthContext: Auto-refresh failed, redirecting to login');
+          await handleAuthFailure();
+          return;
+        }
+        
+        // Token is still valid
+        if (storedRefreshToken) {
+          console.log('✅ Found both access token and refresh token');
+        } else {
+          console.log('⚠️ Found access token but no refresh token');
+        }
+        
         const userData = JSON.parse(storedUser);
         
         setToken(storedToken);
@@ -70,6 +161,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         router.replace('/feeds');
       } else {
         // No token found, redirect to login
+        console.log('❌ No authentication tokens found');
         router.replace('/auth/login');
       }
     } catch (error) {
@@ -88,7 +180,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await loginUser(credentials);
       
       if (response.success && response.data) {
-        const { token: authToken } = response.data;
+        const { token: authToken, refreshToken } = response.data;
         
         // Decode JWT token to get user information
         let userData;
@@ -118,8 +210,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           };
         }
         
-        // Store token and user data
+        // Store both tokens and user data
         await AsyncStorage.setItem('authToken', authToken);
+        if (refreshToken) {
+          await AsyncStorage.setItem('refreshToken', refreshToken);
+          console.log('✅ Refresh token stored');
+        } else {
+          console.log('⚠️ No refresh token in response');
+        }
         await AsyncStorage.setItem('userData', JSON.stringify(userData));
         
         // Update state
@@ -168,6 +266,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       // Clear stored data
       await AsyncStorage.removeItem('authToken');
+      await AsyncStorage.removeItem('refreshToken');
       await AsyncStorage.removeItem('userData');
       
       // Clear state
@@ -191,6 +290,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     register,
     logout,
     checkAuthStatus,
+    handleAuthFailure,
   };
 
   return (

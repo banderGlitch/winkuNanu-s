@@ -15,10 +15,12 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '../utils/authContext';
+import { getPosts, Post } from '../utils/postService';
 
 import PostCard from '../components/feed/PostCard';
 import StoryCarousel from '../components/feed/StoryCarousel';
 import CreatePostButton from '../components/feed/CreatePostButton';
+import CreatePostModal from '../components/feed/CreatePostModal';
 import ProtectedRoute from '../components/ui/ProtectedRoute';
 
 const { width, height } = Dimensions.get('window');
@@ -191,18 +193,115 @@ const mockStories = [
 ];
 
 export default function FeedsScreen() {
-  const { user, logout } = useAuth();
-  const [posts, setPosts] = useState(mockPosts);
+  const { user, logout, handleAuthFailure } = useAuth();
+  // Sample posts for testing
+  const samplePosts: Post[] = [
+    {
+      id: '1',
+      user: {
+        id: 'user1',
+        username: 'john_doe',
+        fullName: 'John Doe',
+        avatar: 'https://via.placeholder.com/50',
+        isVerified: true,
+      },
+      content: {
+        text: 'Just finished setting up my Winku! 🚀',
+        images: [],
+        location: 'New York, NY',
+      },
+      stats: {
+        likes: 15,
+        comments: 3,
+        shares: 1,
+        saves: 5,
+      },
+      timestamp: '2 minutes ago',
+      isLiked: false,
+      isSaved: false,
+    },
+    {
+      id: '2',
+      user: {
+        id: 'user2',
+        username: 'jane_smith',
+        fullName: 'Jane Smith',
+        avatar: 'https://via.placeholder.com/50',
+        isVerified: false,
+      },
+      content: {
+        text: 'Beautiful day for coding! ☀️ #programming #reactnative',
+        images: [],
+        location: 'San Francisco, CA',
+      },
+      stats: {
+        likes: 28,
+        comments: 7,
+        shares: 2,
+        saves: 12,
+      },
+      timestamp: '1 hour ago',
+      isLiked: true,
+      isSaved: false,
+    },
+    {
+      id: '3',
+      user: {
+        id: 'user3',
+        username: 'dev_mike',
+        fullName: 'Mike Developer',
+        avatar: 'https://via.placeholder.com/50',
+        isVerified: true,
+      },
+      content: {
+        text: 'Working on some amazing features for our mobile app. Can\'t wait to share! 💻',
+        images: [],
+        location: 'Austin, TX',
+      },
+      stats: {
+        likes: 42,
+        comments: 12,
+        shares: 5,
+        saves: 8,
+      },
+      timestamp: '2 hours ago',
+      isLiked: false,
+      isSaved: true,
+    },
+  ];
+
+  const [posts, setPosts] = useState<Post[]>(samplePosts);
   const [stories, setStories] = useState(mockStories);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState('forYou');
+  const [isCreatePostModalVisible, setIsCreatePostModalVisible] = useState(false);
 
-  const onRefresh = useCallback(async () => {
+  const onRefresh = async () => {
     setRefreshing(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    setRefreshing(false);
-  }, []);
+    try {
+      const response = await getPosts();
+      if (response.success && response.data) {
+        setPosts(response.data);
+      } else {
+        // Check if it's an authentication error
+        if (response.message === 'Authentication failed. Please login again.') {
+          console.log('🚨 Feeds: Authentication failed during refresh, handling auth failure');
+          handleAuthFailure();
+        } else {
+          console.error('Failed to fetch posts:', response.message);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error refreshing posts:', error);
+      // Check if it's an authentication error
+      if (error.message === 'Authentication failed. Please login again.') {
+        console.log('🚨 Feeds: Authentication failed during refresh, handling auth failure');
+        handleAuthFailure();
+      }
+    } finally {
+      setRefreshing(false);
+    }
+  };
 
   const handleLikePost = useCallback((postId: string) => {
     setPosts(prevPosts =>
@@ -237,6 +336,36 @@ export default function FeedsScreen() {
       )
     );
   }, []);
+
+  const handleNewPost = (newPostData: any) => {
+    // Create a new post with the correct structure
+    const newPost: Post = {
+      id: newPostData.id || Date.now().toString(),
+      user: {
+        id: user?.id || 'current_user',
+        username: user?.username || 'current_user',
+        fullName: user?.fullName || 'Current User',
+        avatar: user?.avatar || 'https://via.placeholder.com/50',
+        isVerified: user?.isVerified || false,
+      },
+      content: {
+        text: newPostData.content || newPostData.text || '',
+        images: newPostData.images || [],
+        location: newPostData.location || '',
+      },
+      stats: {
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        saves: 0,
+      },
+      timestamp: 'Just now',
+      isLiked: false,
+      isSaved: false,
+    };
+
+    setPosts(prevPosts => [newPost, ...prevPosts]);
+  };
 
   const renderHeader = () => (
     <View style={styles.header}>
@@ -356,11 +485,18 @@ export default function FeedsScreen() {
             }
             showsVerticalScrollIndicator={false}
           />
-          <CreatePostButton />
-        </View>
-      </SafeAreaView>
-    </ProtectedRoute>
-  );
+                  <CreatePostButton onPress={() => setIsCreatePostModalVisible(true)} />
+      </View>
+      
+      {/* Create Post Modal */}
+      <CreatePostModal
+        visible={isCreatePostModalVisible}
+        onClose={() => setIsCreatePostModalVisible(false)}
+        onPostCreated={handleNewPost}
+      />
+    </SafeAreaView>
+  </ProtectedRoute>
+);
 }
 
 const styles = StyleSheet.create({
