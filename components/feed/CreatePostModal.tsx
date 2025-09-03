@@ -12,130 +12,154 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../../utils/authContext';
-import LoadingSpinner from '../ui/LoadingSpinner';
-import { createPost, testPostsEndpoint, testCurrentToken } from '../../utils/postService';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width, height } = Dimensions.get('window');
 
 interface CreatePostModalProps {
   visible: boolean;
   onClose: () => void;
-  onPostCreated: (newPost: any) => void;
+  onPostCreated: (newPostData: any) => void;
 }
 
 interface PostData {
-  text: string;
-  location: string;
+  content: string;
+  visibility: string;
+  images: string[];
 }
 
 export default function CreatePostModal({ visible, onClose, onPostCreated }: CreatePostModalProps) {
-  const { user, handleAuthFailure } = useAuth();
   const [postData, setPostData] = useState<PostData>({
-    text: '',
-    location: '',
+    content: '',
+    visibility: 'PUBLIC',
+    images: [],
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleTestEndpoint = async () => {
-    console.log('🧪 Testing endpoint...');
-    const result = await testPostsEndpoint();
-    console.log('Test result:', result);
-    
-    if (result.exists) {
-      Alert.alert(
-        'Endpoint Test Result',
-        `Endpoint: ${result.correctEndpoint}\nRequires Auth: ${result.requiresAuth ? 'Yes' : 'No'}`
-      );
-    } else {
-      Alert.alert('Endpoint Test Result', 'No working endpoints found. Check your backend configuration.');
+  // Pick images from gallery
+  const pickImages = async () => {
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsMultipleSelection: true,
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets) {
+        const newImages = result.assets.map(asset => asset.uri);
+        setPostData(prev => ({ ...prev, images: [...prev.images, ...newImages] }));
+        console.log('📸 Images selected:', newImages);
+      }
+    } catch (error) {
+      console.error('❌ Error picking images:', error);
+      Alert.alert('Error', 'Failed to pick images');
     }
   };
 
+  // Remove image by index
+  const removeImage = (index: number) => {
+    setPostData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
+    }));
+  };
+
+  // Create post with form-data
   const handleCreatePost = async () => {
-    if (!postData.text.trim()) {
-      Alert.alert('Error', 'Please write something for your post');
+    if (!postData.content.trim() && postData.images.length === 0) {
+      Alert.alert('Error', 'Please add some content or select images');
       return;
     }
 
     setIsLoading(true);
     try {
-      console.log('Creating post with data:', postData);
-      const response = await createPost({
-        text: postData.text.trim(),
-        location: postData.location.trim(),
+      console.log('🚀 Creating post with data:', postData);
+      
+      // Get auth token
+      const token = await AsyncStorage.getItem('authToken');
+      if (!token) {
+        Alert.alert('Error', 'Authentication token not found. Please login again.');
+        return;
+      }
+
+      // Create FormData exactly like Postman
+      const formData = new FormData();
+      formData.append('content', postData.content.trim());
+      formData.append('visibility', postData.visibility);
+      
+      // Add images if provided
+      if (postData.images.length > 0) {
+        postData.images.forEach((imageUri, index) => {
+          const imageFile = {
+            uri: imageUri,
+            type: 'image/jpeg',
+            name: `image_${index}.jpg`
+          } as any;
+          
+          formData.append('images', imageFile);
+          console.log(`📸 Added image ${index}:`, imageUri);
+        });
+      }
+
+      console.log('📤 Sending POST request to: http://192.168.1.12:8080/api/v1/post/createPost');
+      console.log('📋 FormData content:');
+      console.log('  - content:', postData.content);
+      console.log('  - visibility:', postData.visibility);
+      console.log('  - images count:', postData.images.length);
+
+      const response = await fetch('http://192.168.1.12:8080/api/v1/post/createPost', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // Don't set Content-Type for FormData, let the browser set it with boundary
+        },
+        body: formData,
       });
 
-      console.log('Post creation response:', response);
+      console.log('📥 Response status:', response.status);
 
-      if (response.success && response.data) {
-        onPostCreated(response.data);
-        setPostData({ text: '', location: '' });
-        onClose();
-        Alert.alert('Success', 'Post created successfully!');
-      } else {
-        Alert.alert('Error', response.message || 'Failed to create post');
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Error:', errorText);
+        Alert.alert('Error', `Failed to create post: ${response.status}`);
+        return;
       }
-    } catch (error: any) {
-      console.error('Error creating post:', error);
-      
-      // Check if it's an authentication error
-      if (error.message === 'Authentication failed. Please login again.') {
-        Alert.alert(
-          'Session Expired',
-          'Your session has expired. Please login again.',
-          [
-            {
-              text: 'OK',
-              onPress: () => {
-                // Close modal first
-                onClose();
-                // Then handle auth failure
-                setTimeout(() => {
-                  handleAuthFailure();
-                }, 100);
-              }
-            }
-          ]
-        );
-      } else {
-        Alert.alert('Error', 'Failed to create post. Please try again.');
-      }
+
+      const responseData = await response.json();
+      console.log('✅ Post created successfully:', responseData);
+
+      Alert.alert('Success', 'Post created successfully!');
+      setPostData({ content: '', visibility: 'PUBLIC', images: [] });
+      onPostCreated(responseData);
+      onClose();
+
+    } catch (error) {
+      console.error('❌ Error creating post:', error);
+      Alert.alert('Error', 'Failed to create post. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleClose = () => {
-    if (postData.text.trim()) {
+    if (postData.content.trim() || postData.images.length > 0) {
       Alert.alert(
         'Discard Post?',
         'You have unsaved changes. Are you sure you want to discard them?',
         [
           { text: 'Keep Editing', style: 'cancel' },
           { text: 'Discard', style: 'destructive', onPress: () => {
-            setPostData({ text: '', location: '' });
+            setPostData({ content: '', visibility: 'PUBLIC', images: [] });
             onClose();
           }}
         ]
       );
     } else {
       onClose();
-    }
-  };
-
-  const handleTestToken = async () => {
-    try {
-      const isValid = await testCurrentToken();
-      if (isValid) {
-        Alert.alert('Token Test', '✅ Your current token is valid!');
-      } else {
-        Alert.alert('Token Test', '❌ Your current token is invalid or expired.');
-      }
-    } catch (error) {
-      Alert.alert('Token Test', '❌ Error testing token: ' + error);
     }
   };
 
@@ -158,11 +182,11 @@ export default function CreatePostModal({ visible, onClose, onPostCreated }: Cre
           <Text style={styles.headerTitle}>Create Post</Text>
           <TouchableOpacity 
             onPress={handleCreatePost}
-            disabled={isLoading || !postData.text.trim()}
-            style={[styles.postButton, (!postData.text.trim() || isLoading) && styles.postButtonDisabled]}
+            disabled={isLoading || (!postData.content.trim() && postData.images.length === 0)}
+            style={[styles.postButton, ((!postData.content.trim() && postData.images.length === 0) || isLoading) && styles.postButtonDisabled]}
           >
             {isLoading ? (
-              <LoadingSpinner size="small" color="#fff" />
+              <ActivityIndicator size="small" color="#fff" />
             ) : (
               <Text style={styles.postButtonText}>Post</Text>
             )}
@@ -170,49 +194,74 @@ export default function CreatePostModal({ visible, onClose, onPostCreated }: Cre
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          <View style={styles.userInfo}>
-            <Text style={styles.userName}>{user?.fullName || 'User'}</Text>
-            <Text style={styles.userUsername}>@{user?.username || 'user'}</Text>
+          {/* Visibility Selector */}
+          <View style={styles.visibilityContainer}>
+            <Text style={styles.sectionTitle}>Visibility</Text>
+            <View style={styles.visibilityButtons}>
+              {['PUBLIC', 'FRIENDS', 'PRIVATE'].map((option) => (
+                <TouchableOpacity
+                  key={option}
+                  style={[
+                    styles.visibilityButton,
+                    postData.visibility === option && styles.visibilityButtonActive
+                  ]}
+                  onPress={() => setPostData(prev => ({ ...prev, visibility: option }))}
+                >
+                  <Text style={[
+                    styles.visibilityButtonText,
+                    postData.visibility === option && styles.visibilityButtonTextActive
+                  ]}>
+                    {option}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
 
-          {/* Test Button */}
-          <TouchableOpacity style={styles.testButton} onPress={handleTestEndpoint}>
-            <Text style={styles.testButtonText}>🧪 Test Endpoint</Text>
-          </TouchableOpacity>
-          
-          {/* Test Token Button */}
-          <TouchableOpacity style={[styles.testButton, { marginTop: 10 }]} onPress={handleTestToken}>
-            <Text style={styles.testButtonText}>🔑 Test Current Token</Text>
-          </TouchableOpacity>
-
+          {/* Content Input */}
           <View style={styles.textInputContainer}>
             <TextInput
               style={styles.textInput}
               placeholder="What's on your mind?"
               placeholderTextColor="#9ca3af"
-              value={postData.text}
-              onChangeText={(text) => setPostData(prev => ({ ...prev, text }))}
+              value={postData.content}
+              onChangeText={(content) => setPostData(prev => ({ ...prev, content }))}
               multiline
               textAlignVertical="top"
               maxLength={1000}
             />
             <Text style={styles.characterCount}>
-              {postData.text.length}/1000
+              {postData.content.length}/1000
             </Text>
           </View>
 
-          <View style={styles.inputSection}>
-            <Text style={styles.sectionTitle}>Location</Text>
-            <View style={styles.inputContainer}>
-              <Ionicons name="location-outline" size={20} color="#9ca3af" />
-              <TextInput
-                style={styles.input}
-                placeholder="Add location (optional)"
-                placeholderTextColor="#9ca3af"
-                value={postData.location}
-                onChangeText={(location) => setPostData(prev => ({ ...prev, location }))}
-              />
-            </View>
+          {/* Image Picker */}
+          <View style={styles.imageSection}>
+            <Text style={styles.sectionTitle}>Images</Text>
+            <TouchableOpacity style={styles.imagePickerButton} onPress={pickImages}>
+              <Ionicons name="image" size={20} color="#667eea" />
+              <Text style={styles.imagePickerButtonText}>Add Images</Text>
+            </TouchableOpacity>
+            
+            {/* Selected Images Preview */}
+            {postData.images.length > 0 && (
+              <View style={styles.imagesPreview}>
+                <Text style={styles.imagesPreviewText}>Selected Images ({postData.images.length})</Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                  {postData.images.map((uri, index) => (
+                    <View key={index} style={styles.imageWrapper}>
+                      <Image source={{ uri }} style={styles.previewImage} />
+                      <TouchableOpacity
+                        style={styles.removeImageButton}
+                        onPress={() => removeImage(index)}
+                      >
+                        <Ionicons name="close-circle" size={24} color="#ef4444" />
+                      </TouchableOpacity>
+                    </View>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -316,17 +365,73 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#1f2937',
   },
-  testButton: {
-    backgroundColor: '#4f46e5',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    alignItems: 'center',
+  visibilityContainer: {
     marginBottom: 20,
   },
-  testButtonText: {
+  visibilityButtons: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  visibilityButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    backgroundColor: '#fff',
+  },
+  visibilityButtonActive: {
+    backgroundColor: '#667eea',
+    borderColor: '#667eea',
+  },
+  visibilityButtonText: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#6b7280',
+  },
+  visibilityButtonTextActive: {
     color: '#fff',
+  },
+  imageSection: {
+    marginBottom: 20,
+  },
+  imagePickerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 8,
+  },
+  imagePickerButtonText: {
     fontSize: 16,
-    fontWeight: '600',
+    color: '#667eea',
+    fontWeight: '500',
+  },
+  imagesPreview: {
+    marginTop: 12,
+  },
+  imagesPreviewText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
+  },
+  imageWrapper: {
+    position: 'relative',
+    marginRight: 12,
+  },
+  previewImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+  },
+  removeImageButton: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    backgroundColor: '#fff',
+    borderRadius: 12,
   },
 }); 
