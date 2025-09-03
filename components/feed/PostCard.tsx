@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,68 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
+const POST_PADDING = 32; // 16px padding on each side
+const AVAILABLE_WIDTH = width - POST_PADDING;
+
+// Component for dynamic image sizing
+interface DynamicImageProps {
+  imageUri: string;
+  style?: any;
+  containerStyle?: any;
+}
+
+function DynamicImage({ imageUri, style, containerStyle }: DynamicImageProps) {
+  const [imageHeight, setImageHeight] = useState(200); // Default height
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const setupImage = async () => {
+      try {
+        setIsLoading(true);
+        
+        // Get image dimensions
+        const { width: imgWidth, height: imgHeight } = await new Promise<{width: number, height: number}>((resolve, reject) => {
+          Image.getSize(imageUri, (width, height) => {
+            resolve({ width, height });
+          }, reject);
+        });
+        
+        // Calculate height based on available width while maintaining aspect ratio
+        const aspectRatio = imgHeight / imgWidth;
+        const calculatedHeight = AVAILABLE_WIDTH * aspectRatio;
+        
+        // Set reasonable limits (min 150px, max 600px)
+        const finalHeight = Math.max(150, Math.min(600, calculatedHeight));
+        
+        setImageHeight(finalHeight);
+        console.log(`📐 Image dimensions: ${imgWidth}x${imgHeight}, calculated height: ${finalHeight}`);
+      } catch (error) {
+        console.error('❌ Error setting up image:', error);
+        setImageHeight(200); // Fallback height
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    setupImage();
+  }, [imageUri]);
+
+  if (isLoading) {
+    return (
+      <View style={[styles.imagePlaceholder, { height: imageHeight }, containerStyle]}>
+        <Ionicons name="image-outline" size={40} color="#d1d5db" />
+      </View>
+    );
+  }
+
+  return (
+    <Image
+      source={{ uri: imageUri }}
+      style={[style, { height: imageHeight }]}
+      resizeMode="contain"
+    />
+  );
+}
 
 interface PostCardProps {
   post: {
@@ -60,10 +122,9 @@ export default function PostCard({
 
     if (post.content.images.length === 1) {
       return (
-        <Image
-          source={{ uri: post.content.images[0] }}
+        <DynamicImage
+          imageUri={post.content.images[0]}
           style={styles.singleImage}
-          resizeMode="cover"
         />
       );
     }
@@ -71,15 +132,13 @@ export default function PostCard({
     if (post.content.images.length === 2) {
       return (
         <View style={styles.twoImagesContainer}>
-          <Image
-            source={{ uri: post.content.images[0] }}
+          <DynamicImage
+            imageUri={post.content.images[0]}
             style={styles.twoImage}
-            resizeMode="cover"
           />
-          <Image
-            source={{ uri: post.content.images[1] }}
-            style={styles.twoImage}
-            resizeMode="cover"
+          <DynamicImage
+            imageUri={post.content.images[1]}
+            style={styles.multipleImageSmall}
           />
         </View>
       );
@@ -87,16 +146,14 @@ export default function PostCard({
 
     return (
       <View style={styles.multipleImagesContainer}>
-        <Image
-          source={{ uri: post.content.images[0] }}
+        <DynamicImage
+          imageUri={post.content.images[0]}
           style={styles.multipleImageMain}
-          resizeMode="cover"
         />
         <View style={styles.multipleImagesRight}>
-          <Image
-            source={{ uri: post.content.images[1] }}
+          <DynamicImage
+            imageUri={post.content.images[1]}
             style={styles.multipleImageSmall}
-            resizeMode="cover"
           />
           {post.content.images.length > 2 && (
             <View style={styles.moreImagesOverlay}>
@@ -265,7 +322,6 @@ const styles = StyleSheet.create({
   },
   singleImage: {
     width: '100%',
-    height: 300,
     borderBottomLeftRadius: 16,
     borderBottomRightRadius: 16,
   },
@@ -275,7 +331,7 @@ const styles = StyleSheet.create({
   },
   twoImage: {
     flex: 1,
-    height: 200,
+    minHeight: 150,
   },
   multipleImagesContainer: {
     flexDirection: 'row',
@@ -283,7 +339,7 @@ const styles = StyleSheet.create({
   },
   multipleImageMain: {
     flex: 2,
-    height: 200,
+    minHeight: 150,
   },
   multipleImagesRight: {
     flex: 1,
@@ -291,7 +347,15 @@ const styles = StyleSheet.create({
   },
   multipleImageSmall: {
     flex: 1,
-    height: 99,
+    minHeight: 75,
+  },
+  imagePlaceholder: {
+    width: '100%',
+    backgroundColor: '#f8fafc',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
   },
   moreImagesOverlay: {
     flex: 1,

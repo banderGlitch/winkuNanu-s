@@ -15,7 +15,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useAuth } from '../utils/authContext';
-import { getPosts, Post } from '../utils/postService';
+// import { getPosts, Post } from '../utils/postService';
 
 import PostCard from '../components/feed/PostCard';
 import StoryCarousel from '../components/feed/StoryCarousel';
@@ -24,6 +24,32 @@ import CreatePostModal from '../components/feed/CreatePostModal';
 import ProtectedRoute from '../components/ui/ProtectedRoute';
 
 const { width, height } = Dimensions.get('window');
+
+// Define the Post interface
+interface Post {
+  id: string;
+  user: {
+    id: string;
+    username: string;
+    fullName: string;
+    avatar: string;
+    isVerified: boolean;
+  };
+  content: {
+    text: string;
+    images: string[];
+    location: string;
+  };
+  stats: {
+    likes: number;
+    comments: number;
+    shares: number;
+    saves: number;
+  };
+  timestamp: string;
+  isLiked: boolean;
+  isSaved: boolean;
+}
 
 // Mock data for feeds
 const mockPosts = [
@@ -39,8 +65,8 @@ const mockPosts = [
     content: {
       text: 'Just finished an amazing hike! The views were absolutely breathtaking. Nature never fails to amaze me. 🌲⛰️ #hiking #nature #adventure',
       images: [
-        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&h=600&fit=crop', // Landscape 4:3
+        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&h=800&fit=crop', // Portrait 3:4
       ],
       location: 'Mountain Trail, Colorado',
     },
@@ -90,7 +116,7 @@ const mockPosts = [
     content: {
       text: 'New restaurant discovery! This place has the best sushi I\'ve ever tasted. Highly recommend! 🍣✨',
       images: [
-        'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=1000&h=500&fit=crop', // Wide landscape 2:1
       ],
       location: 'Sakura Sushi Bar',
     },
@@ -116,9 +142,9 @@ const mockPosts = [
     content: {
       text: 'Weekend vibes with my favorite people! Sometimes the best moments are the simple ones. 💕',
       images: [
-        'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=400&h=300&fit=crop',
-        'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=300&fit=crop',
-        'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=400&h=300&fit=crop',
+        'https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=500&h=1000&fit=crop', // Tall portrait 1:2
+        'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=800&h=600&fit=crop', // Landscape 4:3
+        'https://images.unsplash.com/photo-1527529482837-4698179dc6ce?w=600&h=600&fit=crop', // Square 1:1
       ],
       location: 'Central Park',
     },
@@ -129,6 +155,58 @@ const mockPosts = [
       saves: 234,
     },
     timestamp: '1 day ago',
+    isLiked: true,
+    isSaved: false,
+  },
+  {
+    id: '5',
+    user: {
+      id: '5',
+      username: 'test_user',
+      fullName: 'Test User',
+      avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face',
+      isVerified: false,
+    },
+    content: {
+      text: 'Testing dynamic image sizing with ultra-wide panorama! 📸',
+      images: [
+        'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&h=300&fit=crop', // Ultra-wide 4:1
+      ],
+      location: 'Test Location',
+    },
+    stats: {
+      likes: 50,
+      comments: 5,
+      shares: 2,
+      saves: 10,
+    },
+    timestamp: '3 hours ago',
+    isLiked: false,
+    isSaved: false,
+  },
+  {
+    id: '6',
+    user: {
+      id: '6',
+      username: 'vertical_test',
+      fullName: 'Vertical Test',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
+      isVerified: true,
+    },
+    content: {
+      text: 'Testing very tall portrait images! 📱',
+      images: [
+        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=400&h=1200&fit=crop', // Very tall 1:3
+      ],
+      location: 'Portrait Test',
+    },
+    stats: {
+      likes: 25,
+      comments: 3,
+      shares: 1,
+      saves: 5,
+    },
+    timestamp: '5 hours ago',
     isLiked: true,
     isSaved: false,
   },
@@ -195,7 +273,8 @@ const mockStories = [
 export default function FeedsScreen() {
   const { user, logout, handleAuthFailure } = useAuth();
   // Sample posts for testing
-  const samplePosts: Post[] = [
+  // @ts-ignore
+  const samplePosts = [
     {
       id: '1',
       user: {
@@ -279,17 +358,12 @@ export default function FeedsScreen() {
   const onRefresh = async () => {
     setRefreshing(true);
     try {
-      const response = await getPosts();
+      // Using mock data for now
+      const response = { success: true, data: mockPosts };
       if (response.success && response.data) {
         setPosts(response.data);
       } else {
-        // Check if it's an authentication error
-        if (response.message === 'Authentication failed. Please login again.') {
-          console.log('🚨 Feeds: Authentication failed during refresh, handling auth failure');
-          handleAuthFailure();
-        } else {
-          console.error('Failed to fetch posts:', response.message);
-        }
+        console.error('Failed to fetch posts');
       }
     } catch (error: any) {
       console.error('Error refreshing posts:', error);
